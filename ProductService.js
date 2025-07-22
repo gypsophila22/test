@@ -5,7 +5,7 @@ export class Product {
     if (typeof id !== 'number' || !Number.isInteger(id) || id <= 0) {
       this.id = null; 
     } else {
-      this.id = id; 
+      this.id = id; // id체크 
     }
     this.name = name; // 상품명
     this.description = description; // 상품 설명
@@ -26,7 +26,7 @@ export class ElectronicProduct extends Product {
   }
 }
 
-// 위는 클래스
+// 위는 클래스 구현 미션
 
 class ProductApiService{
   constructor(){

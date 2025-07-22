@@ -5,7 +5,7 @@ export class Article {
      if (typeof id !== 'number' || !Number.isInteger(id) || id <= 0) {
       this.id = null; 
     } else {
-      this.id = id; 
+      this.id = id; // id 체크
     }
     this._title = ''; // 제목
     this._content = ''; // 내용
@@ -55,7 +55,7 @@ export class Article {
   }
 }
 
-// 위는 클래스
+// 위는 클래스 구현 미션
 
 class ArticleApiService{
   constructor(){
@@ -79,7 +79,7 @@ getArticlesList(page = 1, pageSize = 10, keyword = '') {
       pageSize: pageSize,
     }
     if (keyword){
-      params.keyword = keyword;
+      params.k<Up>eyword = keyword;
     }
     return axios.get(this.url, {params: params})
     .then(response => {
@@ -91,9 +91,6 @@ getArticlesList(page = 1, pageSize = 10, keyword = '') {
 }
 
 getArticle(id){
-    if (!id){
-      throw new Error('id를 확인해 주세요.');
-      }
         return axios.get(`${this.url}/${id}`)
         .then(response => {
           return response.data;
@@ -141,9 +138,6 @@ patchArticle(id, title, content, image){
   }
 
 async deleteArticle(id){
-  if (!id){
-    throw new Error('id를 확인해 주세요');
-  }
   const deleteUrl = `${this.url}/${id}`;
 
   return axios.delete(deleteUrl)

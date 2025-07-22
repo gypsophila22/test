@@ -79,7 +79,7 @@ getArticlesList(page = 1, pageSize = 10, keyword = '') {
       pageSize: pageSize,
     }
     if (keyword){
-      params.k<Up>eyword = keyword;
+      params.keyword = keyword;
     }
     return axios.get(this.url, {params: params})
     .then(response => {

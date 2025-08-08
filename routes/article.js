@@ -1,6 +1,5 @@
 import express from 'express';
 import { PrismaClient } from '../generated/prisma/index.js';
-// import articleCommentRouter from './article-comment.js';
 import {
   validateId,
   validateCommentId,
@@ -12,10 +11,7 @@ import {
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// router.use('/:id/comments', articleCommentRouter);
-
 // 게시글 목록 조회 API
-
 router
   .route('/')
   .get(async (req, res) => {
@@ -25,8 +21,16 @@ router
     const keyword = req.query.keyword || ''; // 키워드 설정
     const skip = (page - 1) * limit; // 넘길 항목수
     let orderBy;
-    if (sort === 'recent') {
-      orderBy = { createdAt: 'desc' };
+    switch (sort) {
+      case 'resect':
+        orderBy = { createdAt: 'desc' };
+        break;
+      case 'old':
+        orderBy = { createdAt: 'asc' };
+        break;
+      default:
+        orderBy = { createdAt: 'desc' };
+        break;
     }
     let where;
     if (keyword) {

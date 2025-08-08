@@ -22,8 +22,16 @@ router
     const skip = (page - 1) * limit; // 넘길 항목수
 
     let orderBy;
-    if (sort === 'recent') {
-      orderBy = { createdAt: 'desc' };
+    switch (sort) {
+      case 'resect':
+        orderBy = { createdAt: 'desc' };
+        break;
+      case 'old':
+        orderBy = { createdAt: 'asc' };
+        break;
+      default:
+        orderBy = { createdAt: 'desc' };
+        break;
     }
 
     let where = {};

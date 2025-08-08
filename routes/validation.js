@@ -1,7 +1,7 @@
 export const validateId = (req, res, next) => {
   const paramValue = req.params.id;
   if (!paramValue || isNaN(parseInt(paramValue))) {
-    return res.status(400).json({ message: '잘못된 상품 ID 형식입니다.' });
+    return res.status(400).json({ message: '잘못된 ID 형식입니다.' });
   }
   next();
 };

@@ -1,5 +1,21 @@
-/node_modules
-/uploads
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Prisma generated
+generated/
+
+# Env
 .env
-/dist
-/generated/prisma
+
+# OS
+.DS_Store
+
+# Build output
+dist/

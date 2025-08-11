@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import 'dotenv/config';
+>>>>>>> 924b2a7 (feat: complete part2 mission3)
 import { PrismaClient } from '../generated/prisma/index.js';
 
 const prisma = new PrismaClient();

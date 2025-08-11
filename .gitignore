@@ -1,5 +1,6 @@
 /uploads
 /generated/prisma
+/generated/
 
 # 의존성 모듈
 /node_modules

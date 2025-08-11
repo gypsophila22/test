@@ -19,3 +19,6 @@ yarn-error.log*
 /dist
 /build
 .DS_Store
+
+prisma/generated/
+prisma/client/

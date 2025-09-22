@@ -1,13 +1,14 @@
-import { prisma } from '../lib/prismaClient.js';
 import type { Response } from 'express';
-type PrismaUpdateArg = Parameters<typeof prisma.user.update>[0];
-type UserUpdateData = PrismaUpdateArg extends {
-    data?: infer D;
-} ? D : Record<string, unknown>;
-type RawUser = NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>>;
-type UserWithoutPassword = Omit<RawUser, 'password'>;
 declare class UserService {
-    register(username: string, email: string, password: string): Promise<UserWithoutPassword>;
+    register(username: string, email: string, password: string): Promise<Omit<{
+        id: number;
+        username: string;
+        email: string;
+        images: string[];
+        password: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }, "password">>;
     login(userId: number): Promise<{
         accessToken: string;
         refreshToken: string;
@@ -17,19 +18,31 @@ declare class UserService {
         username: string;
         email: string;
         images: string[];
+        createdAt: Date;
+        updatedAt: Date;
     } | null>;
-    updateUserProfile(userId: number, updateData: UserUpdateData): Promise<{
+    updateUserProfile(userId: number, updateData: any): Promise<{
         username: string;
         email: string;
-        images: string[] | null;
+        images: string[];
     }>;
-    updatePassword(userId: number, currentPassword: string, newPassword: string): Promise<UserWithoutPassword>;
+    updatePassword(userId: number, currentPassword: string, newPassword: string): Promise<Omit<{
+        id: number;
+        username: string;
+        email: string;
+        images: string[];
+        password: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }, "password">>;
     getUserComments(userId: number): Promise<{
+        likeCount: any;
+        id: number;
+        createdAt: Date;
         product: {
             name: string;
             id: number;
         } | null;
-        likeCount: number;
         article: {
             id: number;
             title: string;
@@ -37,14 +50,19 @@ declare class UserService {
         content: string;
     }[]>;
     getUserLikedComments(userId: number): Promise<{
+        likeCount: any;
+        isLiked: boolean;
         id: number;
         createdAt: Date;
-        updatedAt: Date;
-        userId: number;
-        likeCount: number;
+        product: {
+            name: string;
+            id: number;
+        } | null;
+        article: {
+            id: number;
+            title: string;
+        } | null;
         content: string;
-        articleId: number | null;
-        productId: number | null;
     }[]>;
     setTokenCookies(res: Response, accessToken: string, refreshToken: string): void;
     clearTokenCookies(res: Response): void;

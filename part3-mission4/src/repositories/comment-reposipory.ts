@@ -2,7 +2,13 @@ import { prisma } from '../lib/prismaClient.js';
 
 export const commentRepository = {
   findById(commentId: number) {
-    return prisma.comment.findUnique({ where: { id: commentId } });
+    return prisma.comment.findUnique({
+      where: { id: commentId },
+      include: {
+        user: { select: { username: true } },
+        // 필요하다면 article / product도 select 가능
+      },
+    });
   },
 
   update(commentId: number, content: string) {
@@ -13,26 +19,29 @@ export const commentRepository = {
   },
 
   delete(commentId: number, userId: number) {
-    return prisma.comment.deleteMany({ where: { id: commentId, userId } });
+    return prisma.comment.deleteMany({
+      where: { id: commentId, userId },
+    });
   },
 
-  like(userId: number, commentId: number) {
-    return prisma.comment.update({
-      where: { id: commentId },
-      data: {
-        likedBy: { connect: { id: userId } },
-        likeCount: { increment: 1 },
+  // 내가 쓴 댓글들 조회
+  async findUserComments(userId: number) {
+    return prisma.comment.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
   },
 
-  unlike(userId: number, commentId: number) {
-    return prisma.comment.update({
-      where: { id: commentId },
-      data: {
-        likedBy: { disconnect: { id: userId } },
-        likeCount: { decrement: 1 },
-      },
+  // 좋아요한 댓글 조회
+  async findLikedComments(userId: number) {
+    return prisma.comment.findMany({
+      where: { likes: { some: { userId } } }, // CommentLike 기준
     });
   },
 };

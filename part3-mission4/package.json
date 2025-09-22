@@ -5,7 +5,7 @@
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "app.js",
+  "main": "dist/app.js",
   "scripts": {
     "seed": "tsx src/prisma/seed.ts",
     "postinstall": "npx prisma generate && npx prisma migrate deploy && npx prisma db seed",
@@ -41,15 +41,13 @@
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
-    "@types/node": "^24.3.1",
+    "@types/node": "^24.5.2",
     "@types/passport": "^1.0.17",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "prisma": "^6.15.0",
-    "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   }

@@ -47,15 +47,28 @@ class Validation {
     // ------------------------------
     // ID 검증
     // ------------------------------
-    idSchema = z.preprocess((val) => Number(val), z.number().positive('ID는 양수여야 합니다.'));
+    idSchema = z
+        .string()
+        .refine((val) => /^[1-9]\d*$/.test(val), {
+        message: 'ID가 올바르지 않습니다.',
+    })
+        .transform((val) => Number(val));
     // ------------------------------
-    // 유저네임 중복 검사 미들웨어
+    // 유저네임, 이메일 중복 검사 미들웨어
     // ------------------------------
-    async validateUsername(req, res, next) {
-        const { username } = req.body;
-        const userCheck = await prisma.user.findUnique({ where: { username } });
-        if (userCheck) {
+    async validateRegister(req, res, next) {
+        const { username, email } = req.body;
+        // username 중복 체크
+        const usernameExists = await prisma.user.findUnique({
+            where: { username },
+        });
+        if (usernameExists) {
             return res.status(409).json({ message: '이미 사용 중인 닉네임입니다.' });
+        }
+        // email 중복 체크
+        const emailExists = await prisma.user.findUnique({ where: { email } });
+        if (emailExists) {
+            return res.status(409).json({ message: '이미 사용 중인 이메일입니다.' });
         }
         next();
     }

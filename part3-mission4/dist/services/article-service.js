@@ -1,66 +1,61 @@
-import { prisma } from '../lib/prismaClient.js';
-import AppError from '../lib/appError.js';
 import { Prisma } from '@prisma/client';
-console.log('[Service] Imported prisma:', !!prisma);
+import { articleRepository } from '../repositories/article-repository.js';
+import { articleLikeRepository, commentLikeRepository, } from '../repositories/like-repository.js';
+import AppError from '../lib/appError.js';
 class ArticleService {
     // 전체 게시글 조회
     async getAllArticles(query, userId) {
-        const page = query.page || 1;
-        const limit = query.limit || 10;
-        const sort = query.sort || 'recent';
+        const page = Number(query.page) || 1;
+        const limit = Number(query.limit) || 10;
         const skip = (page - 1) * limit;
+        const sort = query.sort || 'recent';
         const search = query.keyword || '';
-        let orderBy;
-        switch (sort) {
-            case 'recent':
-                orderBy = { createdAt: 'desc' };
-                break;
-            case 'old':
-                orderBy = { createdAt: 'asc' };
-                break;
-            default:
-                orderBy = { createdAt: 'desc' };
-                break;
-        }
+        const orderBy = sort === 'old' ? { createdAt: 'asc' } : { createdAt: 'desc' };
         const where = search
             ? {
                 OR: [
-                    {
-                        title: {
-                            contains: search,
-                            mode: 'insensitive',
-                        },
-                    },
-                    {
-                        content: {
-                            contains: search,
-                            mode: 'insensitive',
-                        },
-                    },
+                    { title: { contains: search, mode: 'insensitive' } },
+                    { content: { contains: search, mode: 'insensitive' } },
                 ],
             }
             : {};
-        const articles = await prisma.article.findMany({
+        const articles = await articleRepository.findMany({
             skip,
             take: limit,
             where,
-            orderBy: { createdAt: 'desc' },
+            orderBy,
             include: {
                 user: { select: { username: true } },
-                likedBy: true,
-                comments: true,
+                comments: {
+                    include: { user: { select: { username: true } } },
+                },
             },
         });
-        if (!articles || articles.length === 0) {
-            throw new AppError('해당하는 게시글을 찾을 수 없습니다.', 404);
-        }
-        // ✅ 여기서 a의 타입을 Prisma가 반환한 타입으로 추론
-        const articlesWithLike = articles.map((a) => ({
-            ...a,
-            isLiked: userId ? a.likedBy?.length > 0 : false,
-            likeCount: a.likeCount,
+        const articlesWithLike = await Promise.all(articles.map(async (a) => {
+            const likeCount = await articleLikeRepository.count(a.id);
+            const commentsWithLikes = await Promise.all(a.comments.map(async (c) => {
+                const cLikeCount = await commentLikeRepository.count(c.id);
+                // userId가 있으면 exists 체크, 없으면 false
+                const cIsLiked = userId
+                    ? await commentLikeRepository.exists(userId, c.id)
+                    : false;
+                return {
+                    ...c,
+                    likeCount: cLikeCount,
+                    isLiked: cIsLiked,
+                };
+            }));
+            const isLiked = userId
+                ? await articleLikeRepository.exists(userId, a.id)
+                : false;
+            return {
+                ...a,
+                likeCount,
+                isLiked,
+                comments: commentsWithLikes,
+            };
         }));
-        const totalArticles = await prisma.article.count({ where });
+        const totalArticles = await articleRepository.count(where);
         const totalPages = Math.ceil(totalArticles / limit);
         return {
             data: articlesWithLike,
@@ -69,78 +64,57 @@ class ArticleService {
     }
     // 단일 게시글 조회
     async getArticleById(articleId, userId) {
-        const include = {
-            user: { select: { username: true } },
-            comments: {
-                select: {
-                    id: true,
-                    content: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    user: { select: { username: true } },
-                    likeCount: true,
-                    ...(userId && {
-                        likedBy: {
-                            where: { id: userId },
-                            select: { id: true, username: true },
-                        },
-                    }),
-                },
-            },
-            ...(userId && {
-                likedBy: {
-                    where: { id: userId },
-                    select: { id: true, username: true },
-                },
-            }),
-        };
-        const article = await prisma.article.findUnique({
-            where: { id: articleId },
-            include,
-        });
-        if (!article) {
+        const article = await articleRepository.findUnique(articleId);
+        if (!article)
             throw new AppError('존재하지 않는 게시글입니다.', 404);
-        }
-        const articleWithLike = {
-            ...article,
-            isLiked: article.likedBy?.length > 0 || false,
-            likeCount: article.likeCount,
-            comments: article.comments.map((c) => ({
+        const likeCount = await articleLikeRepository.count(article.id);
+        const isLiked = userId
+            ? await articleLikeRepository.exists(userId, article.id)
+            : false;
+        const commentsWithLikes = await Promise.all(article.comments.map(async (c) => {
+            const cLikeCount = await commentLikeRepository.count(c.id);
+            const cIsLiked = userId
+                ? await commentLikeRepository.exists(userId, c.id)
+                : false;
+            return {
                 ...c,
-                isLiked: c.likedBy?.length > 0 || false,
-            })),
+                likeCount: cLikeCount,
+                isLiked: cIsLiked,
+            };
+        }));
+        return {
+            ...article,
+            likeCount,
+            isLiked,
+            comments: commentsWithLikes,
         };
-        return articleWithLike;
     }
     // 게시글 작성
     async createArticle(title, content, userId) {
         if (!userId)
             throw new AppError('작성자를 확인할 수 없습니다.', 400);
-        const newArticle = await prisma.article.create({
-            data: {
-                title,
-                content,
-                user: { connect: { id: userId } },
-            },
+        const newArticle = await articleRepository.create({
+            title,
+            content,
+            userId,
         });
-        if (!newArticle) {
+        if (!newArticle)
             throw new AppError('게시글 등록에 실패했습니다.', 400);
-        }
         return newArticle;
     }
     // 게시글 수정
-    async updateArticle(id, updateData, userId) {
-        const updated = await prisma.article.update({
-            where: { id: id, userId },
-            data: updateData,
-        });
+    async updateArticle(articleId, userId, updateData) {
+        const product = await articleRepository.findUnique(articleId);
+        if (!product)
+            throw new AppError('제품 없음', 404);
+        if (product.userId !== userId)
+            throw new AppError('권한 없음', 403);
+        await articleRepository.update(articleId, userId, updateData);
         return { message: '게시글이 수정되었습니다.' };
     }
     // 게시글 삭제
-    async deleteArticle(id, userId) {
-        const deleted = await prisma.article.deleteMany({
-            where: { id: id, userId },
-        });
+    async deleteArticle(articleId, userId) {
+        const deleted = await articleRepository.delete(articleId, userId);
         if (deleted.count === 0) {
             throw new AppError('권한이 없거나 게시글이 존재하지 않습니다.', 403);
         }
@@ -148,48 +122,31 @@ class ArticleService {
     }
     // 본인이 작성한 게시글 조회
     async getUserArticles(userId) {
-        const articles = await prisma.article.findMany({
-            where: { userId },
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                title: true,
-                content: true,
-                tags: true,
-                images: true,
-                likeCount: true,
-            },
-        });
-        return articles;
+        return articleRepository.findUserArticles(userId);
     }
     // 좋아요한 게시글 조회
     async getUserLikedArticles(userId) {
-        const likedArticles = await prisma.article.findMany({
-            where: { likedBy: { some: { id: userId } } },
-        });
-        return likedArticles;
+        return articleRepository.findLikedArticles(userId);
     }
     // 게시글 좋아요
     async articleLike(userId, articleId) {
-        const articleLiked = await prisma.article.update({
-            where: { id: articleId },
-            data: {
-                likedBy: { connect: { id: userId } },
-                likeCount: { increment: 1 },
-            },
-        });
-        return articleLiked;
+        const alreadyLiked = await articleLikeRepository.exists(userId, articleId);
+        if (alreadyLiked) {
+            throw new AppError('이미 좋아요를 눌렀습니다.', 400);
+        }
+        await articleLikeRepository.create(userId, articleId);
+        const count = await articleLikeRepository.count(articleId);
+        return { message: '좋아요 완료', likeCount: count };
     }
     // 게시글 좋아요 취소
     async articleUnlike(userId, articleId) {
-        const articleUnliked = await prisma.article.update({
-            where: { id: articleId },
-            data: {
-                likedBy: { disconnect: { id: userId } },
-                likeCount: { decrement: 1 },
-            },
-        });
-        return articleUnliked;
+        const exists = await articleLikeRepository.exists(userId, articleId);
+        if (!exists) {
+            throw new AppError('좋아요를 누른 기록이 없습니다.', 400);
+        }
+        await articleLikeRepository.delete(userId, articleId);
+        const count = await articleLikeRepository.count(articleId);
+        return { message: '좋아요 취소', likeCount: count };
     }
 }
 export const articleService = new ArticleService();

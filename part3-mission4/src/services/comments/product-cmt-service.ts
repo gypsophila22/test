@@ -1,6 +1,7 @@
 import AppError from '../../lib/appError.js';
 import { commentService } from './comment-service.js';
 import { productCommentRepository } from '../../repositories/product-cmt-repository.js';
+import { commentLikeRepository } from '../../repositories/like-repository.js';
 
 class ProductCommentService {
   updateComment = commentService.updateComment;
@@ -9,18 +10,22 @@ class ProductCommentService {
   commentUnlike = commentService.unlikeComment;
 
   async getCommentsByProductId(productId: number, userId?: number) {
-    const comments = await productCommentRepository.findByProductId(
-      productId,
-      userId
+    const comments = await productCommentRepository.findByProductId(productId);
+
+    return Promise.all(
+      comments.map(async (c) => {
+        const likeCount = await commentLikeRepository.count(c.id);
+        const isLiked = userId
+          ? await commentLikeRepository.exists(userId, c.id)
+          : false;
+
+        return {
+          ...c,
+          likeCount,
+          isLiked,
+        };
+      })
     );
-
-    if (!comments.length)
-      throw new AppError('해당 상품의 댓글을 찾을 수 없습니다.', 404);
-
-    return comments.map((c) => ({
-      ...c,
-      isLiked: c.likedBy?.length > 0 || false,
-    }));
   }
 
   async createProductComment(

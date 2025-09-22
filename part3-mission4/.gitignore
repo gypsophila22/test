@@ -16,3 +16,6 @@ generated/
 
 # OS
 .DS_Store
+
+# Build output
+dist/

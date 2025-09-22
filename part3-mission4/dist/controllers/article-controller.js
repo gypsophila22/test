@@ -25,7 +25,7 @@ class ArticleController {
         const { title, content, tags } = req.body;
         const updateData = { title, content, tags };
         const userId = req.user.id;
-        const updated = await articleService.updateArticle(id, updateData, userId);
+        const updated = await articleService.updateArticle(id, userId, updateData);
         res.json(updated);
     }
     async deleteArticle(req, res) {
@@ -33,7 +33,7 @@ class ArticleController {
         const id = parseInt(idParam, 10);
         const userId = req.user.id;
         const result = await articleService.deleteArticle(id, userId);
-        res.status(200).json(result);
+        res.status(204).send();
     }
     async likeArticle(req, res) {
         const userId = req.user.id;

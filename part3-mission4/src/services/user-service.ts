@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import { userRepository } from '../repositories/user-repository.js';
+import { commentLikeRepository } from '../repositories/like-repository.js';
 import { generateTokens, verifyRefreshToken } from '../lib/token.js';
 import type { Response } from 'express';
 import {
@@ -8,6 +9,7 @@ import {
   REFRESH_TOKEN_COOKIE_NAME,
 } from '../lib/constants.js';
 import AppError from '../lib/appError.js';
+import { exclude } from '../lib/exclude.js';
 
 class UserService {
   async register(username: string, email: string, password: string) {
@@ -21,8 +23,7 @@ class UserService {
       password: hashed,
     });
 
-    const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return exclude(user, ['password']);
   }
 
   async login(userId: number) {
@@ -42,7 +43,7 @@ class UserService {
     currentPassword: string,
     newPassword: string
   ) {
-    const user = await userRepository.findById(userId);
+    const user = await userRepository.findByIdWithPassword(userId);
     if (!user) throw new AppError('사용자를 찾을 수 없습니다.', 404);
 
     const isValid = await bcrypt.compare(
@@ -57,16 +58,32 @@ class UserService {
 
     const hashed = await bcrypt.hash(newPassword, 10);
     const updated = await userRepository.updatePassword(userId, hashed);
-    const { password: _, ...userWithoutPassword } = updated;
-    return userWithoutPassword;
+    return exclude(updated, ['password']);
   }
 
   async getUserComments(userId: number) {
-    return userRepository.getUserComments(userId);
+    const comments = await userRepository.getUserComments(userId);
+
+    // 각 댓글별 likeCount 붙이기
+    return Promise.all(
+      comments.map(async (c) => {
+        const likeCount = await commentLikeRepository.count(c.id);
+        return { ...c, likeCount };
+      })
+    );
   }
 
   async getUserLikedComments(userId: number) {
-    return userRepository.getUserLikedComments(userId);
+    const liked = await userRepository.getUserLikedComments(userId);
+
+    // liked = commentLike[], include로 comment 가져옴
+    return Promise.all(
+      liked.map(async (like) => {
+        const c = like.comment;
+        const likeCount = await commentLikeRepository.count(c.id);
+        return { ...c, likeCount, isLiked: true };
+      })
+    );
   }
 
   setTokenCookies(res: Response, accessToken: string, refreshToken: string) {

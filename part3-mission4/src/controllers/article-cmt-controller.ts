@@ -27,7 +27,7 @@ class ArticleCommentController {
   }
 
   async updateComment(req: Request, res: Response) {
-    const idParam = req.params.articleId;
+    const idParam = req.params.commentId;
     const commentId = parseInt(idParam!, 10);
     const { content } = req.body;
     const userId = req.user!.id;
@@ -40,7 +40,7 @@ class ArticleCommentController {
   }
 
   async deleteComment(req: Request, res: Response) {
-    const idParam = req.params.articleId;
+    const idParam = req.params.commentId;
     const commentId = parseInt(idParam!, 10);
     const userId = req.user!.id;
     const result = await articleCommentService.deleteComment(commentId, userId);
@@ -48,7 +48,7 @@ class ArticleCommentController {
   }
 
   async likeComment(req: Request, res: Response) {
-    const idParam = req.params.articleId;
+    const idParam = req.params.commentId;
     const commentId = parseInt(idParam!, 10);
     const userId = req.user!.id;
     const result = await articleCommentService.commentLike(userId, commentId);
@@ -56,7 +56,7 @@ class ArticleCommentController {
   }
 
   async unlikeComment(req: Request, res: Response) {
-    const idParam = req.params.articleId;
+    const idParam = req.params.commentId;
     const commentId = parseInt(idParam!, 10);
     const userId = req.user!.id;
     const result = await articleCommentService.commentUnlike(userId, commentId);

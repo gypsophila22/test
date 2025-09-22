@@ -13,7 +13,8 @@ class UserController {
     }
     // 로그인
     async login(req, res) {
-        const { accessToken, refreshToken } = await userService.login(req.user.id);
+        const userId = req.user.id;
+        const { accessToken, refreshToken } = await userService.login(userId);
         userService.setTokenCookies(res, accessToken, refreshToken);
         res.status(200).json({
             accesstoken: accessToken,

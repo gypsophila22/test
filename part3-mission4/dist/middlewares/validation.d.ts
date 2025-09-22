@@ -24,8 +24,8 @@ declare class Validation {
     commentSchema: z.ZodObject<{
         content: z.ZodPipe<z.ZodTransform<{} | null, unknown>, z.ZodString>;
     }, z.core.$strip>;
-    idSchema: z.ZodPipe<z.ZodTransform<number, unknown>, z.ZodNumber>;
-    validateUsername(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
+    idSchema: z.ZodPipe<z.ZodString, z.ZodTransform<number, string>>;
+    validateRegister(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
     validate(schema: z.ZodTypeAny): (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>> | undefined;
     validateParam(paramName: string, schema: z.ZodTypeAny): (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>> | undefined;
 }

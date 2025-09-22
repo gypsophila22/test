@@ -11,7 +11,7 @@ import { setupSwagger } from './swagger.js';
 dotenv.config();
 
 console.log('[App] DATABASE_URL at app.ts start:', process.env.DATABASE_URL);
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const app = express();
 
 app.use(
@@ -20,6 +20,7 @@ app.use(
       process.env.CORS_ORIGIN || 'http://localhost:3001',
       'https://codeit-mission3.com',
     ],
+    credentials: true,
   })
 );
 
@@ -36,6 +37,6 @@ setupSwagger(app);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

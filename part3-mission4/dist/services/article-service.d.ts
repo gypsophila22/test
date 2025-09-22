@@ -1,36 +1,20 @@
-type ArticleQuery = {
-    page?: number;
-    limit?: number;
-    sort?: 'recent' | 'old';
-    keyword?: string;
-};
+import type { ArticleQuery } from '../types/article-types.js';
 declare class ArticleService {
     getAllArticles(query: ArticleQuery, userId?: number): Promise<{
         data: {
+            likeCount: any;
             isLiked: boolean;
-            likeCount: number;
+            comments: {
+                likeCount: any;
+                isLiked: boolean;
+                id: number;
+                content: string;
+                likedBy: never;
+            }[];
             user: {
                 username: string;
             };
-            comments: {
-                id: number;
-                createdAt: Date;
-                updatedAt: Date;
-                userId: number;
-                likeCount: number;
-                content: string;
-                articleId: number | null;
-                productId: number | null;
-            }[];
-            likedBy: {
-                id: number;
-                username: string;
-                email: string;
-                images: string[];
-                password: string;
-                createdAt: Date;
-                updatedAt: Date;
-            }[];
+            likedBy: never;
             id: number;
             images: string[];
             createdAt: Date;
@@ -48,9 +32,10 @@ declare class ArticleService {
         };
     }>;
     getArticleById(articleId: number, userId?: number): Promise<{
+        likeCount: any;
         isLiked: boolean;
-        likeCount: number;
         comments: {
+            likeCount: any;
             isLiked: boolean;
             user: {
                 username: string;
@@ -58,29 +43,19 @@ declare class ArticleService {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            likeCount: number;
+            userId: number;
             content: string;
-            likedBy: {
-                id: number;
-                username: string;
-                email: string;
-                images: string[];
-                password: string;
-                createdAt: Date;
-                updatedAt: Date;
-            }[];
+            articleId: number | null;
+            productId: number | null;
         }[];
         user: {
             username: string;
         };
-        likedBy: {
+        likes: {
             id: number;
-            username: string;
-            email: string;
-            images: string[];
-            password: string;
             createdAt: Date;
-            updatedAt: Date;
+            userId: number;
+            articleId: number;
         }[];
         id: number;
         images: string[];
@@ -98,21 +73,19 @@ declare class ArticleService {
         updatedAt: Date;
         tags: string[];
         userId: number;
-        likeCount: number;
         title: string;
         content: string;
     }>;
-    updateArticle(id: number, updateData: Record<string, any>, userId: number): Promise<{
+    updateArticle(articleId: number, userId: number, updateData: Record<string, any>): Promise<{
         message: string;
     }>;
-    deleteArticle(id: number, userId: number): Promise<{
+    deleteArticle(articleId: number, userId: number): Promise<{
         message: string;
     }>;
     getUserArticles(userId: number): Promise<{
         id: number;
         images: string[];
         tags: string[];
-        likeCount: number;
         title: string;
         content: string;
     }[]>;
@@ -123,31 +96,16 @@ declare class ArticleService {
         updatedAt: Date;
         tags: string[];
         userId: number;
-        likeCount: number;
         title: string;
         content: string;
     }[]>;
     articleLike(userId: number, articleId: number): Promise<{
-        id: number;
-        images: string[];
-        createdAt: Date;
-        updatedAt: Date;
-        tags: string[];
-        userId: number;
-        likeCount: number;
-        title: string;
-        content: string;
+        message: string;
+        likeCount: any;
     }>;
     articleUnlike(userId: number, articleId: number): Promise<{
-        id: number;
-        images: string[];
-        createdAt: Date;
-        updatedAt: Date;
-        tags: string[];
-        userId: number;
-        likeCount: number;
-        title: string;
-        content: string;
+        message: string;
+        likeCount: any;
     }>;
 }
 export declare const articleService: ArticleService;

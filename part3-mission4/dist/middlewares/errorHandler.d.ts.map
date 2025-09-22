@@ -1,1 +1,1 @@
-{"version":3,"file":"errorHandler.d.ts","sourceRoot":"","sources":["../../src/middlewares/errorHandler.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,mBAAmB,EAAE,MAAM,SAAS,CAAC;AAEnD,QAAA,MAAM,YAAY,EAAE,mBAkCnB,CAAC;AAEF,eAAe,YAAY,CAAC"}
+{"version":3,"file":"errorHandler.d.ts","sourceRoot":"","sources":["../../src/middlewares/errorHandler.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,mBAAmB,EAAE,MAAM,SAAS,CAAC;AAGnD,QAAA,MAAM,YAAY,EAAE,mBA+DnB,CAAC;AAEF,eAAe,YAAY,CAAC"}

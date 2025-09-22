@@ -1,36 +1,20 @@
-type ProductQuery = {
-    page?: number;
-    limit?: number;
-    sort?: 'recent' | 'old';
-    keyword?: string;
-};
+import type { ProductQuery } from '../types/product-types.js';
 declare class ProductService {
-    getAllProducts(query: ProductQuery, userId: number): Promise<{
+    getAllProducts(query: ProductQuery, userId?: number): Promise<{
         data: {
+            likeCount: any;
             isLiked: boolean;
-            likeCount: number;
+            comments: {
+                likeCount: any;
+                isLiked: boolean;
+                id: number;
+                content: string;
+                likedBy: never;
+            }[];
             user: {
                 username: string;
             };
-            comments: {
-                id: number;
-                createdAt: Date;
-                updatedAt: Date;
-                userId: number;
-                likeCount: number;
-                content: string;
-                articleId: number | null;
-                productId: number | null;
-            }[];
-            likedBy: {
-                id: number;
-                username: string;
-                email: string;
-                images: string[];
-                password: string;
-                createdAt: Date;
-                updatedAt: Date;
-            }[];
+            likedBy: never;
             name: string;
             id: number;
             images: string[];
@@ -49,39 +33,30 @@ declare class ProductService {
         };
     }>;
     getProductById(productId: number, userId?: number): Promise<{
+        likeCount: any;
         isLiked: boolean;
-        likeCount: number;
         comments: {
+            likeCount: any;
             isLiked: boolean;
-            likeCount: number;
             user: {
                 username: string;
             };
             id: number;
             createdAt: Date;
             updatedAt: Date;
+            userId: number;
             content: string;
-            likedBy: {
-                id: number;
-                username: string;
-                email: string;
-                images: string[];
-                password: string;
-                createdAt: Date;
-                updatedAt: Date;
-            }[];
+            articleId: number | null;
+            productId: number | null;
         }[];
         user: {
             username: string;
         };
-        likedBy: {
+        likes: {
             id: number;
-            username: string;
-            email: string;
-            images: string[];
-            password: string;
             createdAt: Date;
-            updatedAt: Date;
+            userId: number;
+            productId: number;
         }[];
         name: string;
         id: number;
@@ -103,15 +78,9 @@ declare class ProductService {
         price: number;
         tags: string[];
         userId: number;
-        likeCount: number;
     }>;
     updateProduct(productId: number, userId: number, updateData: Record<string, any>): Promise<{
-        name: string;
-        id: number;
-        images: string[];
-        description: string;
-        price: number;
-        tags: string[];
+        message: string;
     }>;
     deleteProduct(productId: number, userId: number): Promise<{
         message: string;
@@ -123,7 +92,6 @@ declare class ProductService {
         description: string;
         price: number;
         tags: string[];
-        likeCount: number;
     }[]>;
     getUserLikedProducts(userId: number): Promise<{
         name: string;
@@ -135,31 +103,14 @@ declare class ProductService {
         price: number;
         tags: string[];
         userId: number;
-        likeCount: number;
     }[]>;
     productLike(userId: number, productId: number): Promise<{
-        name: string;
-        id: number;
-        images: string[];
-        createdAt: Date;
-        updatedAt: Date;
-        description: string;
-        price: number;
-        tags: string[];
-        userId: number;
-        likeCount: number;
+        message: string;
+        likeCount: any;
     }>;
     productUnlike(userId: number, productId: number): Promise<{
-        name: string;
-        id: number;
-        images: string[];
-        createdAt: Date;
-        updatedAt: Date;
-        description: string;
-        price: number;
-        tags: string[];
-        userId: number;
-        likeCount: number;
+        message: string;
+        likeCount: any;
     }>;
 }
 export declare const productService: ProductService;

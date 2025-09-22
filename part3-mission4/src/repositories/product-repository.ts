@@ -12,28 +12,16 @@ class ProductRepository {
   async findUnique(productId: number, userId?: number) {
     return prisma.product.findUnique({
       where: { id: productId },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        price: true,
-        tags: true,
-        images: true,
-        userId: true,
-        likeCount: true,
-        ...(userId && {
-          likedBy: { where: { id: userId }, select: { id: true } },
-        }),
+      include: {
+        user: { select: { username: true } },
         comments: {
-          select: {
-            id: true,
-            content: true,
-            likeCount: true,
-            ...(userId && {
-              likedBy: { where: { id: userId }, select: { id: true } },
-            }),
+          include: {
+            user: { select: { username: true } },
           },
         },
+        ...(userId && {
+          likes: { where: { userId }, select: { userId: true } }, // ✅ 유저가 좋아요 했는지 확인
+        }),
       },
     });
   }
@@ -62,7 +50,7 @@ class ProductRepository {
     updateData: Record<string, any>
   ) {
     return prisma.product.update({
-      where: { id: productId },
+      where: { id: productId, userId },
       data: updateData,
     });
   }
@@ -86,34 +74,14 @@ class ProductRepository {
         price: true,
         tags: true,
         images: true,
-        likeCount: true,
-        likedBy: true,
       },
     });
   }
 
   async findLikedProducts(userId: number) {
     return prisma.product.findMany({
-      where: { likedBy: { some: { id: userId } } },
-    });
-  }
-
-  async likeProduct(userId: number, productId: number) {
-    return prisma.product.update({
-      where: { id: productId },
-      data: {
-        likedBy: { connect: { id: userId } },
-        likeCount: { increment: 1 },
-      },
-    });
-  }
-
-  async unlikeProduct(userId: number, productId: number) {
-    return prisma.product.update({
-      where: { id: productId },
-      data: {
-        likedBy: { disconnect: { id: userId } },
-        likeCount: { decrement: 1 },
+      where: {
+        likes: { some: { userId } }, // ✅ ProductLike 테이블 기준
       },
     });
   }

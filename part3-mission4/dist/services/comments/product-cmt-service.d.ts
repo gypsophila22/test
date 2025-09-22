@@ -4,7 +4,6 @@ declare class ProductCommentService {
         createdAt: Date;
         updatedAt: Date;
         userId: number;
-        likeCount: number;
         content: string;
         articleId: number | null;
         productId: number | null;
@@ -13,48 +12,29 @@ declare class ProductCommentService {
         message: string;
     }>;
     commentLike: (userId: number, commentId: number) => Promise<{
-        id: number;
-        createdAt: Date;
-        updatedAt: Date;
-        userId: number;
-        likeCount: number;
-        content: string;
-        articleId: number | null;
-        productId: number | null;
+        message: string;
+        likeCount: any;
     }>;
     commentUnlike: (userId: number, commentId: number) => Promise<{
-        id: number;
-        createdAt: Date;
-        updatedAt: Date;
-        userId: number;
-        likeCount: number;
-        content: string;
-        articleId: number | null;
-        productId: number | null;
+        message: string;
+        likeCount: any;
     }>;
     getCommentsByProductId(productId: number, userId?: number): Promise<{
+        likeCount: any;
         isLiked: boolean;
-        likeCount: number;
         user: {
             username: string;
         };
-        likedBy: {
-            id: number;
-        }[];
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        userId: number;
         content: string;
-        articleId: number | null;
-        productId: number | null;
     }[]>;
     createProductComment(productId: number, content: string, userId: number): Promise<{
         id: number;
         createdAt: Date;
         updatedAt: Date;
         userId: number;
-        likeCount: number;
         content: string;
         articleId: number | null;
         productId: number | null;

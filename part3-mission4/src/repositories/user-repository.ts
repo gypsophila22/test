@@ -14,6 +14,7 @@ class UserRepository {
     return prisma.user.create({ data });
   }
 
+  // 비밀번호 제외 버전 (프로필 조회 등)
   async findById(userId: number) {
     return prisma.user.findUnique({
       where: { id: userId },
@@ -22,7 +23,16 @@ class UserRepository {
         username: true,
         email: true,
         images: true,
+        createdAt: true,
+        updatedAt: true,
       },
+    });
+  }
+
+  // 비밀번호 포함 버전 (인증/비밀번호 변경용)
+  async findByIdWithPassword(userId: number) {
+    return prisma.user.findUnique({
+      where: { id: userId },
     });
   }
 
@@ -45,22 +55,36 @@ class UserRepository {
     });
   }
 
+  // 사용자가 작성한 댓글 조회
   async getUserComments(userId: number) {
     return prisma.comment.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       select: {
+        id: true,
         content: true,
         article: { select: { id: true, title: true } },
         product: { select: { id: true, name: true } },
-        likeCount: true,
+        createdAt: true,
       },
     });
   }
 
+  // 사용자가 좋아요한 댓글 조회
   async getUserLikedComments(userId: number) {
-    return prisma.comment.findMany({
-      where: { likedBy: { some: { id: userId } } },
+    return prisma.commentLike.findMany({
+      where: { userId },
+      include: {
+        comment: {
+          select: {
+            id: true,
+            content: true,
+            article: { select: { id: true, title: true } },
+            product: { select: { id: true, name: true } },
+            createdAt: true,
+          },
+        },
+      },
     });
   }
 }

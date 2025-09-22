@@ -1,12 +1,43 @@
-// errorHandler.js
+// errorHandler.ts
 import multer from 'multer';
+import { Prisma } from '@prisma/client';
 const errorHandler = (err, req, res, next) => {
     console.error(err?.stack ?? err);
     // 기본값
     let statusCode = (err && err.statusCode) ?? 500;
     let message = (err && err.message) ?? '서버 오류';
-    // 멀터 에러 처리
-    if (err instanceof multer.MulterError) {
+    // Prisma 에러 처리
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        switch (err.code) {
+            case 'P2002': {
+                // Unique constraint 위반
+                const fields = err.meta?.target || [];
+                if (fields.includes('username')) {
+                    message = '이미 사용 중인 닉네임입니다.';
+                }
+                else if (fields.includes('email')) {
+                    message = '이미 사용 중인 이메일입니다.';
+                }
+                else {
+                    message = `중복된 값이 존재합니다. (${fields.join(', ')})`;
+                }
+                statusCode = 409;
+                break;
+            }
+            case 'P2003': {
+                // Foreign key constraint 위반
+                message = '잘못된 참조로 인해 작업이 불가능합니다.';
+                statusCode = 400;
+                break;
+            }
+            default: {
+                message = `DB 요청 에러 (${err.code})`;
+                statusCode = 400;
+            }
+        }
+    }
+    // Multer 에러 처리
+    else if (err instanceof multer.MulterError) {
         statusCode = 400;
         switch (err.code) {
             case 'LIMIT_FILE_SIZE':
@@ -22,7 +53,7 @@ const errorHandler = (err, req, res, next) => {
                 message = err.message ?? message;
         }
     }
-    // 운영/개발 모드 분리 가능
+    // 응답 (개발 / 운영 분리)
     if (process.env.NODE_ENV === 'production') {
         return res.status(statusCode).json({ message });
     }

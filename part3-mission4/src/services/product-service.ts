@@ -1,13 +1,17 @@
 import { Prisma } from '@prisma/client';
 import { productRepository } from '../repositories/product-repository.js';
-import type { ProductQuery, ProductById } from '../types/product-types.js';
+import {
+  productLikeRepository,
+  commentLikeRepository,
+} from '../repositories/like-repository.js';
+import type { ProductQuery } from '../types/product-types.js';
 import AppError from '../lib/appError.js';
 
 class ProductService {
   // 전체 상품 조회
   async getAllProducts(query: ProductQuery, userId?: number) {
-    const page = query.page || 1;
-    const limit = query.limit || 10;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
     const sort = query.sort || 'recent';
     const search = query.keyword || '';
@@ -31,20 +35,41 @@ class ProductService {
       orderBy,
       include: {
         user: { select: { username: true } },
-        likedBy: { select: { id: true, username: true } },
         comments: {
-          include: { likedBy: true, user: { select: { username: true } } },
+          include: { user: { select: { username: true } } },
         },
       },
     });
 
-    if (!products || products.length === 0)
-      throw new AppError('제품 없음', 404);
+    const productsWithLike = await Promise.all(
+      products.map(async (p) => {
+        const likeCount = await productLikeRepository.count(p.id);
+        const isLiked = userId
+          ? await productLikeRepository.exists(userId, p.id)
+          : false;
 
-    const productsWithLike = products.map((p) => ({
-      ...p,
-      isLiked: userId ? (p.likedBy?.length ?? 0) > 0 : false,
-    }));
+        const commentsWithLikes = await Promise.all(
+          p.comments.map(async (c) => {
+            const cLikeCount = await commentLikeRepository.count(c.id);
+            const cIsLiked = userId
+              ? await commentLikeRepository.exists(userId, c.id)
+              : false;
+            return {
+              ...c,
+              likeCount: cLikeCount,
+              isLiked: cIsLiked,
+            };
+          })
+        );
+
+        return {
+          ...p,
+          likeCount,
+          isLiked,
+          comments: commentsWithLikes,
+        };
+      })
+    );
 
     const totalProducts = await productRepository.count(where);
     const totalPages = Math.ceil(totalProducts / limit);
@@ -61,13 +86,30 @@ class ProductService {
 
     if (!product) throw new AppError('존재하지 않는 상품입니다.', 404);
 
+    const likeCount = await productLikeRepository.count(product.id);
+    const isLiked = userId
+      ? await productLikeRepository.exists(userId, product.id)
+      : false;
+
+    const commentsWithLikes = await Promise.all(
+      product.comments.map(async (c) => {
+        const cLikeCount = await commentLikeRepository.count(c.id);
+        const cIsLiked = userId
+          ? await commentLikeRepository.exists(userId, c.id)
+          : false;
+        return {
+          ...c,
+          likeCount: cLikeCount,
+          isLiked: cIsLiked,
+        };
+      })
+    );
+
     const productWithLike = {
       ...product,
-      isLiked: userId ? product.likedBy.length > 0 : false,
-      comments: product.comments?.map((c) => ({
-        ...c,
-        isLiked: userId ? (c.likedBy.length ?? 0) > 0 : false,
-      })),
+      likeCount,
+      isLiked,
+      comments: commentsWithLikes,
     };
 
     return productWithLike;
@@ -124,12 +166,24 @@ class ProductService {
 
   // 상품 좋아요
   async productLike(userId: number, productId: number) {
-    return productRepository.likeProduct(userId, productId);
+    const alreadyLiked = await productLikeRepository.exists(userId, productId);
+    if (alreadyLiked) {
+      throw new AppError('이미 좋아요를 눌렀습니다.', 400);
+    }
+    await productLikeRepository.create(userId, productId);
+    const count = await productLikeRepository.count(productId);
+    return { message: '좋아요 완료', likeCount: count };
   }
 
   // 상품 좋아요 취소
   async productUnlike(userId: number, productId: number) {
-    return productRepository.unlikeProduct(userId, productId);
+    const exists = await productLikeRepository.exists(userId, productId);
+    if (!exists) {
+      throw new AppError('좋아요를 누른 기록이 없습니다.', 400);
+    }
+    await productLikeRepository.delete(userId, productId);
+    const count = await productLikeRepository.count(productId);
+    return { message: '좋아요 취소', likeCount: count };
   }
 }
 

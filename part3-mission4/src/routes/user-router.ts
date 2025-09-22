@@ -65,7 +65,7 @@ const router = express.Router();
  *       409:
  *         description: 닉네임 중복입니다.
  */
-router.post('/register', validation.validateUsername, userController.register);
+router.post('/register', validation.validateRegister, userController.register);
 
 // 로그인&로그아웃
 /**

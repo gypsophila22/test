@@ -1,41 +1,28 @@
-import { prisma } from '../../lib/prismaClient.js';
 import AppError from '../../lib/appError.js';
-import { commentRepository } from './comment-repo.js';
+import { commentService } from './comment-service.js';
+import { articleCommentRepository } from '../../repositories/article-cmt-repository.js';
+import { commentLikeRepository } from '../../repositories/like-repository.js';
 class ArticleCommentService {
-    // 공통 로직 조합
-    updateComment = commentRepository.updateComment;
-    deleteComment = commentRepository.deleteComment;
-    commentLike = commentRepository.like;
-    commentUnlike = commentRepository.unlike;
-    // 게시글의 댓글 조회
+    updateComment = commentService.updateComment;
+    deleteComment = commentService.deleteComment;
+    commentLike = commentService.likeComment;
+    commentUnlike = commentService.unlikeComment;
     async getCommentsByArticleId(articleId, userId) {
-        const comments = await prisma.comment.findMany({
-            where: { articleId, productId: null },
-            include: {
-                user: { select: { username: true } },
-                likedBy: {
-                    select: { id: true },
-                    ...(userId && { where: { id: userId } }),
-                },
-            },
-        });
-        if (!comments.length)
-            throw new AppError('해당 게시글의 댓글을 찾을 수 없습니다.', 404);
-        return comments.map((c) => ({
-            ...c,
-            isLiked: c.likedBy?.length > 0 || false,
-            likeCount: c.likeCount,
+        const comments = await articleCommentRepository.findByArticleId(articleId);
+        return Promise.all(comments.map(async (c) => {
+            const likeCount = await commentLikeRepository.count(c.id);
+            const isLiked = userId
+                ? await commentLikeRepository.exists(userId, c.id)
+                : false;
+            return {
+                ...c,
+                likeCount,
+                isLiked,
+            };
         }));
     }
-    // 게시글 댓글 작성
     async createArticleComment(articleId, content, userId) {
-        return prisma.comment.create({
-            data: {
-                content,
-                user: { connect: { id: userId } },
-                article: { connect: { id: articleId } },
-            },
-        });
+        return articleCommentRepository.create(articleId, content, userId);
     }
 }
 export const articleCommentService = new ArticleCommentService();

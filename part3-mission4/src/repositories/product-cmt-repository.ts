@@ -1,21 +1,17 @@
 import { prisma } from '../lib/prismaClient.js';
 
 export const productCommentRepository = {
-  findByProductId(productId: number, userId?: number) {
+  findByProductId(productId: number) {
     return prisma.comment.findMany({
-      where: { productId, articleId: null },
+      where: { productId },
       select: {
         id: true,
         content: true,
         createdAt: true,
         updatedAt: true,
-        likeCount: true,
         user: { select: { username: true } },
-        likedBy: {
-          select: { id: true },
-          ...(userId && { where: { id: userId } }),
-        },
       },
+      orderBy: { createdAt: 'desc' },
     });
   },
 

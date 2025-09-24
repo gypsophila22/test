@@ -20,7 +20,7 @@ class UserController {
     const { accessToken, refreshToken } = await userService.login(userId);
     userService.setTokenCookies(res, accessToken, refreshToken);
     res.status(200).json({
-      accesstoken: accessToken,
+      accessToken: accessToken,
       refreshToken: refreshToken,
       message: '로그인 되었습니다.',
     });

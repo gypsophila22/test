@@ -5,10 +5,12 @@ class ArticleController {
   // 게시글
   async getAllArticles(req: Request, res: Response) {
     const userId = req.user?.id;
-    const result = await articleService.getAllArticles(req.query, userId);
-    res.json(result);
+    const { data, pagination } = await articleService.getAllArticles(
+      req.query,
+      userId
+    );
+    res.json({ data, pagination });
   }
-
   async getArticleById(req: Request, res: Response) {
     const userId = req.user?.id;
     const idParam = req.params.id;
@@ -31,8 +33,8 @@ class ArticleController {
   async updateArticle(req: Request, res: Response) {
     const idParam = req.params.id;
     const id = parseInt(idParam!, 10);
-    const { title, content, tags } = req.body;
-    const updateData = { title, content, tags };
+    const { title, content, tags, images } = req.body;
+    const updateData = { title, content, tags, images };
     const userId = req.user!.id;
     const updated = await articleService.updateArticle(id, userId, updateData);
     res.json(updated);

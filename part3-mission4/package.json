@@ -11,6 +11,7 @@
     "postinstall": "npx prisma generate && npx prisma migrate deploy && npx prisma db seed",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/app.ts",
+    "build": "tsc",
     "start": "nodemon dist/app.js",
     "db:reset": "npx prisma migrate reset --skip-seed && npx prisma migrate dev && npx prisma db seed"
   },

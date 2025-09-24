@@ -77,3 +77,11 @@ export type ProductById = {
     };
   };
 };
+
+export interface UpdateProductDto {
+  name?: string;
+  description?: string;
+  price?: number;
+  tags?: string[];
+  images?: string[];
+}

@@ -11,7 +11,7 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, '../uploads/saved'));
   },
-  filename: (req: any, file: { originalname: any; fieldname: any; }, cb: (arg0: null, arg1: string) => void) => {
+  filename: (req, file, cb) => {
     // 파일명: 필드이름-현재시간.확장자
     const ext = path.extname(file.originalname); // 원본 파일의 확장자 추출
     cb(null, `${file.fieldname}-${Date.now()}${ext}`);

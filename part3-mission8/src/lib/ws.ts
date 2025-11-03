@@ -8,6 +8,13 @@ type UserSocketMap = Map<number, string>;
 const userSockets: UserSocketMap = new Map();
 let io: Server;
 
+export interface NotificationPayload {
+  type: 'contract-linked' | 'chat' | 'system';
+  message: string;
+  createdAt: string;
+  data?: Record<string, unknown>;
+}
+
 export function setupWebSocket(server: HTTPServer) {
   io = new Server(server, {
     path: '/ws', // 원하는 엔드포인트
@@ -35,7 +42,7 @@ export function setupWebSocket(server: HTTPServer) {
 
 // notificationService에서 호출할 함수
 export const wsGateway = {
-  notifyUser(userId: number, notif: any) {
+  notifyUser(userId: number, notif: NotificationPayload) {
     const socketId = userSockets.get(userId);
     if (!socketId || !io) return;
     io.to(socketId).emit('notification', notif);

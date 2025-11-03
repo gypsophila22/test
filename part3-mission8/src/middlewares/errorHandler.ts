@@ -3,12 +3,30 @@ import multer from 'multer';
 import type { ErrorRequestHandler } from 'express';
 import { Prisma } from '@prisma/client';
 
+interface HttpError extends Error {
+  statusCode?: number;
+}
+
+function isHttpError(err: unknown): err is HttpError {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'message' in err &&
+    'statusCode' in err
+  );
+}
+
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   console.error((err as Error)?.stack ?? err);
 
   // 기본값
-  let statusCode = (err && (err as any).statusCode) ?? 500;
-  let message = (err && (err as any).message) ?? '서버 오류';
+  let statusCode = 500;
+  let message = '서버 오류';
+
+  if (isHttpError(err)) {
+    statusCode = err.statusCode ?? 500;
+    message = err.message ?? '서버 오류';
+  }
 
   // Prisma 에러 처리
   if (err instanceof Prisma.PrismaClientKnownRequestError) {

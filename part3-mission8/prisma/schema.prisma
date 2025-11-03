@@ -14,19 +14,20 @@ datasource db {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  username      String         @unique
-  email         String         @unique
-  images        String[]
-  password      String
-  products      Product[]
-  articles      Article[]
-  comments      Comment[]
-  productLikes  ProductLike[]
-  articleLikes  ArticleLike[]
-  commentLikes  CommentLike[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id           Int            @id @default(autoincrement())
+  username     String         @unique
+  email        String         @unique
+  images       String[]
+  password     String
+  products     Product[]
+  articles     Article[]
+  comments     Comment[]
+  productLikes ProductLike[]
+  articleLikes ArticleLike[]
+  commentLikes CommentLike[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Notification Notification[]
 }
 
 model Product {
@@ -106,4 +107,25 @@ model CommentLike {
   comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
+}
+
+model Notification {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id])
+  userId Int // 알림 받는 사람
+
+  type    NotificationType
+  message String
+
+  productId Int? // 상품 관련 알림일 수도 있고
+  articleId Int? // 게시글 관련 알림일 수도 있음
+  commentId Int? // 댓글 알림일 수도 있음
+
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+enum NotificationType {
+  PRICE_CHANGE // 좋아요한 상품 가격 변동
+  NEW_COMMENT // 내 게시글에 댓글 달림
 }

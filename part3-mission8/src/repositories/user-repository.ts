@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prismaClient.js';
-import type { UserUpdateData } from '../types/user-types.js';
+import type { UserUpdateData } from '../dtos/user-dto.js';
 
 class UserRepository {
   async findByUsername(username: string) {

@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prismaClient.js';
 import type { Prisma } from '@prisma/client';
-import type { ProductWithRelations } from '../types/product-types.js';
+import type { ProductWithRelations } from '../dtos/product-dto.js';
 
 class ProductRepository {
   async findMany(
@@ -60,7 +60,7 @@ class ProductRepository {
   async update(
     productId: number,
     userId: number,
-    updateData: Record<string, any>
+    updateData: Prisma.ProductUpdateInput
   ) {
     return prisma.product.update({
       where: { id: productId, userId },

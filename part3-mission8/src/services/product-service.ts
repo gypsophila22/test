@@ -4,7 +4,7 @@ import {
   productLikeRepository,
   commentLikeRepository,
 } from '../repositories/like-repository.js';
-import type { ProductQuery, UpdateProductDto } from '../types/product-types.js';
+import type { ProductQuery, UpdateProductDto } from '../dtos/product-dto.js';
 import AppError from '../lib/appError.js';
 import { notificationService } from './notification-service.js';
 

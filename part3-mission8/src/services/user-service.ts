@@ -10,6 +10,7 @@ import {
 } from '../lib/constants.js';
 import AppError from '../lib/appError.js';
 import { exclude } from '../lib/exclude.js';
+import type { UserProfile } from '../dtos/user-dto.js';
 
 class UserService {
   async register(username: string, email: string, password: string) {
@@ -34,7 +35,7 @@ class UserService {
     return userRepository.findById(userId);
   }
 
-  async updateUserProfile(userId: number, updateData: any) {
+  async updateUserProfile(userId: number, updateData: UserProfile) {
     return userRepository.updateUser(userId, updateData);
   }
 
@@ -46,25 +47,28 @@ class UserService {
     const user = await userRepository.findByIdWithPassword(userId);
     if (!user) throw new AppError('사용자를 찾을 수 없습니다.', 404);
 
-    const isValid = await bcrypt.compare(
-      currentPassword,
-      (user as any).password
-    );
-    if (!isValid) throw new AppError('현재 비밀번호가 일치하지 않습니다.', 400);
+    // 현재 비밀번호 비교
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) {
+      throw new AppError('현재 비밀번호가 일치하지 않습니다.', 400);
+    }
 
-    const isSame = await bcrypt.compare(newPassword, (user as any).password);
-    if (isSame)
+    // 기존 비밀번호와 동일한지 확인
+    const isSame = await bcrypt.compare(newPassword, user.password);
+    if (isSame) {
       throw new AppError('기존 비밀번호로는 변경할 수 없습니다.', 400);
+    }
 
+    // 새 비밀번호로 업데이트
     const hashed = await bcrypt.hash(newPassword, 10);
     const updated = await userRepository.updatePassword(userId, hashed);
+
     return exclude(updated, ['password']);
   }
 
   async getUserComments(userId: number) {
     const comments = await userRepository.getUserComments(userId);
 
-    // 각 댓글별 likeCount 붙이기
     return Promise.all(
       comments.map(async (c) => {
         const likeCount = await commentLikeRepository.count(c.id);
@@ -75,8 +79,8 @@ class UserService {
 
   async getUserLikedComments(userId: number) {
     const liked = await userRepository.getUserLikedComments(userId);
+    // liked: [{ comment: {...} }, ...]
 
-    // liked = commentLike[], include로 comment 가져옴
     return Promise.all(
       liked.map(async (like) => {
         const c = like.comment;

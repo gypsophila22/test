@@ -4,7 +4,7 @@ import {
   articleLikeRepository,
   commentLikeRepository,
 } from '../repositories/like-repository.js';
-import type { ArticleQuery, UpdateArticleDto } from '../types/article-types.js';
+import type { ArticleQuery, UpdateArticleDto } from '../dtos/article-dto.js';
 import AppError from '../lib/appError.js';
 
 class ArticleService {

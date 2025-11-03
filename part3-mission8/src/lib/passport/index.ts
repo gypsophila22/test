@@ -2,8 +2,9 @@ import passport from 'passport';
 import { prisma } from '../prismaClient.js';
 import { localStrategy } from './localStrategy.js';
 import { accessTokenStrategy, refreshTokenStrategy } from './jwtStrategy.js';
+import type { AuthUser } from '../../types/authenticated-request.js';
 
-passport.serializeUser(function (user: any, done) {
+passport.serializeUser(function (user: AuthUser, done) {
   done(null, user.id as string | number);
 });
 

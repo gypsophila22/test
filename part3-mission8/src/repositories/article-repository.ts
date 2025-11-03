@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prismaClient.js';
 import type { Prisma } from '@prisma/client';
-import type { ArticleWithRelations } from '../types/article-types.js';
+import type { ArticleWithRelations } from '../dtos/article-dto.js';
 
 class ArticleRepository {
   async findMany(
@@ -39,7 +39,7 @@ class ArticleRepository {
   async update(
     articleId: number,
     userId: number,
-    updateData: Record<string, any>
+    updateData: Prisma.ArticleUpdateInput
   ) {
     return prisma.article.update({
       where: { id: articleId, userId },

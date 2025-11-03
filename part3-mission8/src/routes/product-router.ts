@@ -55,12 +55,8 @@ router.patch(
   '/:id/price',
   authenticate,
   validation.validateParam('id', validation.idSchema),
-  isProductOwner, // 작성자만 가격 조정 가능하게 할 거면 유지
-  validation.validate(
-    // 간단히 newPrice만 받도록 별도 스키마 만드는 게 이상적.
-    // 임시로 { newPrice: number }만 체크하는 스키마 있다 치고
-    validation.productPriceUpdateSchema
-  ),
+  isProductOwner,
+  validation.validate(validation.productPriceUpdateSchema),
   productController.updateProductPrice
 );
 

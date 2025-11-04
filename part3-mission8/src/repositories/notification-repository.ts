@@ -1,15 +1,16 @@
 import { prisma } from '../lib/prismaClient.js';
+import { type NotificationCreateInput } from '../types/notification.js';
 
 export const notificationRepository = {
-  create(data: {
-    userId: number;
-    type: 'PRICE_CHANGE' | 'NEW_COMMENT';
-    message: string;
-    productId?: number;
-    articleId?: number;
-    commentId?: number;
-  }) {
-    return prisma.notification.create({ data });
+  create(data: NotificationCreateInput) {
+    return prisma.notification.create({
+      data: {
+        ...data,
+        productId: data.productId ?? null,
+        articleId: data.articleId ?? null,
+        commentId: data.commentId ?? null,
+      },
+    });
   },
 
   findByUserId(userId: number) {

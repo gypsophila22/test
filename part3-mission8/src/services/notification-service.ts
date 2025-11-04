@@ -1,5 +1,5 @@
 import { notificationRepository } from '../repositories/notification-repository.js';
-import { wsGateway } from '../lib/ws.js'; // (아래 4번에서 설명할 WebSocket 브로드캐스터)
+import { wsGateway } from '../lib/ws.js';
 
 export const notificationService = {
   async pushPriceChange(args: {
@@ -20,8 +20,16 @@ export const notificationService = {
       productId,
     });
 
-    // 실시간 전송
-    wsGateway.notifyUser(receiverUserId, notif);
+    // ✅ 객체 1개로 전달 + data는 있을 때만 포함
+    wsGateway.notifyUser({
+      userId: receiverUserId,
+      type: notif.type,
+      message: notif.message,
+      createdAt: notif.createdAt,
+      ...(notif.productId !== null
+        ? { data: { productId: notif.productId } }
+        : {}),
+    });
 
     return notif;
   },
@@ -40,6 +48,7 @@ export const notificationService = {
       articleTitle,
       commenterName,
     } = args;
+
     const message = `${commenterName} 님이 '${articleTitle}' 글에 댓글을 남겼습니다.`;
 
     const notif = await notificationRepository.create({
@@ -50,7 +59,48 @@ export const notificationService = {
       commentId,
     });
 
-    wsGateway.notifyUser(receiverUserId, notif);
+    // ✅ 객체 1개로 전달 + data는 있을 때만 포함
+    wsGateway.notifyUser({
+      userId: receiverUserId,
+      type: notif.type,
+      message: notif.message,
+      createdAt: notif.createdAt,
+      ...(notif.articleId !== null && notif.commentId !== null
+        ? { data: { articleId: notif.articleId, commentId: notif.commentId } }
+        : {}),
+    });
+
+    return notif;
+  },
+
+  async pushProductComment(args: {
+    receiverUserId: number;
+    productId: number;
+    commentId: number;
+    productName: string;
+    commenterName: string;
+  }) {
+    const { receiverUserId, productId, commentId, productName, commenterName } =
+      args;
+    const message = `${commenterName} 님이 상품 '${productName}'에 댓글을 남겼습니다.`;
+
+    const notif = await notificationRepository.create({
+      userId: receiverUserId,
+      type: 'NEW_COMMENT', // 도메인 타입 재사용
+      message,
+      productId,
+      commentId,
+    });
+
+    wsGateway.notifyUser({
+      userId: receiverUserId,
+      type: notif.type,
+      message: notif.message,
+      createdAt: notif.createdAt,
+      ...(notif.productId !== null && notif.commentId !== null
+        ? { data: { productId: notif.productId, commentId: notif.commentId } }
+        : {}),
+    });
 
     return notif;
   },

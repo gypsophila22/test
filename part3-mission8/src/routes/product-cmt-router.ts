@@ -1,8 +1,8 @@
 import express from 'express';
 import { productCommentController } from '../controllers/product-cmt-controller.js';
 import { validation } from '../middlewares/validation.js';
-import authenticate from '../middlewares/authenticate.js';
 import { isCommentOwner } from '../middlewares/authorize.js';
+import { accessAuth } from '../lib/passport/index.js';
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router
   .route('/:productId/comments')
   .get(productCommentController.getComments)
   .post(
-    authenticate,
+    accessAuth,
     validation.validate(validation.commentSchema),
     productCommentController.createComment
   );
@@ -20,14 +20,14 @@ router
 router
   .route('/comments/:commentId')
   .patch(
-    authenticate,
+    accessAuth,
     validation.validateParam('commentId', validation.idSchema),
     isCommentOwner,
     validation.validate(validation.commentSchema),
     productCommentController.updateComment
   )
   .delete(
-    authenticate,
+    accessAuth,
     validation.validateParam('commentId', validation.idSchema),
     isCommentOwner,
     productCommentController.deleteComment
@@ -37,12 +37,12 @@ router
 router
   .route('/comments/:commentId/like')
   .post(
-    authenticate,
+    accessAuth,
     validation.validateParam('commentId', validation.idSchema),
     productCommentController.likeComment
   )
   .delete(
-    authenticate,
+    accessAuth,
     validation.validateParam('commentId', validation.idSchema),
     productCommentController.unlikeComment
   );

@@ -1,8 +1,8 @@
 import express from 'express';
 import { articleController } from '../controllers/article-controller.js';
 import { validation } from '../middlewares/validation.js';
-import authenticate from '../middlewares/authenticate.js';
 import { isArticleOwner } from '../middlewares/authorize.js';
+import { accessAuth } from '../lib/passport/index.js';
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ router
     articleController.getAllArticles
   )
   .post(
-    authenticate,
+    accessAuth,
     validation.validate(validation.articleSchema),
     articleController.createArticle
   );
@@ -24,14 +24,14 @@ router
   .route('/:id')
   .get(articleController.getArticleById)
   .patch(
-    authenticate,
+    accessAuth,
     validation.validateParam('id', validation.idSchema),
     isArticleOwner,
     validation.validate(validation.articleUpdateSchema),
     articleController.updateArticle
   )
   .delete(
-    authenticate,
+    accessAuth,
     validation.validateParam('id', validation.idSchema),
     isArticleOwner,
     articleController.deleteArticle
@@ -41,12 +41,12 @@ router
 router
   .route('/:id/like')
   .post(
-    authenticate,
+    accessAuth,
     validation.validateParam('id', validation.idSchema),
     articleController.likeArticle
   )
   .delete(
-    authenticate,
+    accessAuth,
     validation.validateParam('id', validation.idSchema),
     articleController.unlikeArticle
   );

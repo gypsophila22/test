@@ -1,8 +1,8 @@
 import express from 'express';
 import { productController } from '../controllers/product-controller.js';
 import { validation } from '../middlewares/validation.js';
-import authenticate from '../middlewares/authenticate.js';
 import { isProductOwner } from '../middlewares/authorize.js';
+import { accessAuth } from '../lib/passport/index.js';
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router
   .route('/')
   .get(productController.getAllProducts)
   .post(
-    authenticate,
+    accessAuth,
     validation.validate(validation.productSchema),
     productController.createProduct
   );
@@ -24,14 +24,14 @@ router
     productController.getProductById
   )
   .patch(
-    authenticate,
+    accessAuth,
     validation.validateParam('id', validation.idSchema),
     isProductOwner,
     validation.validate(validation.productUpdateSchema),
     productController.updateProduct
   )
   .delete(
-    authenticate,
+    accessAuth,
     validation.validateParam('id', validation.idSchema),
     isProductOwner,
     productController.deleteProduct
@@ -41,19 +41,19 @@ router
 router
   .route('/:id/like')
   .post(
-    authenticate,
+    accessAuth,
     validation.validateParam('id', validation.idSchema),
     productController.likeProduct
   )
   .delete(
-    authenticate,
+    accessAuth,
     validation.validateParam('id', validation.idSchema),
     productController.unlikeProduct
   );
 
 router.patch(
   '/:id/price',
-  authenticate,
+  accessAuth,
   validation.validateParam('id', validation.idSchema),
   isProductOwner,
   validation.validate(validation.productPriceUpdateSchema),

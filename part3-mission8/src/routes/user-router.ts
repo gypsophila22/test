@@ -2,8 +2,7 @@ import express from 'express';
 import { userController } from '../controllers/user-controller.js';
 import { productController } from '../controllers/product-controller.js';
 import { validation } from '../middlewares/validation.js';
-import passport from '../lib/passport/index.js';
-import authenticate from '../middlewares/authenticate.js';
+import { localAuth, accessAuth } from '../lib/passport/index.js';
 import { isUserSelf } from '../middlewares/authorize.js';
 import { articleController } from '../controllers/article-controller.js';
 
@@ -115,11 +114,7 @@ router.post('/register', validation.validateRegister, userController.register);
  *       403:
  *         description: '아이디 혹은 패스워드가 일치하지 않습니다'
  */
-router.post(
-  '/login',
-  passport.authenticate('local', { session: false }),
-  userController.login
-);
+router.post('/login', localAuth, userController.login);
 
 // 로그인&로그아웃
 /**
@@ -248,13 +243,13 @@ router.post('/logout', userController.logout);
 router
   .route('/:userId')
   .get(
-    authenticate,
+    accessAuth,
     isUserSelf,
     validation.validateParam('userId', validation.idSchema),
     userController.getUserProfile
   )
   .patch(
-    authenticate,
+    accessAuth,
     isUserSelf,
     validation.validateParam('userId', validation.idSchema),
     userController.updateUserProfile
@@ -310,7 +305,7 @@ router
  */
 router.patch(
   '/:userId/password',
-  authenticate,
+  accessAuth,
   isUserSelf,
   validation.validate(validation.passwordSchema),
   userController.updatePassword
@@ -472,21 +467,21 @@ router.patch(
  */
 router.get(
   '/:userId/my-products',
-  authenticate,
+  accessAuth,
   isUserSelf,
   validation.validateParam('userId', validation.idSchema),
   productController.getUserProducts
 );
 router.get(
   '/:userId/my-articles',
-  authenticate,
+  accessAuth,
   isUserSelf,
   validation.validateParam('userId', validation.idSchema),
   articleController.getUserArticles
 );
 router.get(
   '/:userId/my-comments',
-  authenticate,
+  accessAuth,
   isUserSelf,
   validation.validateParam('userId', validation.idSchema),
   userController.getUserComments
@@ -495,7 +490,7 @@ router.get(
 // 좋아요한 상품, 게시글, 댓글 조회
 router.get(
   '/:userId/likes/products',
-  authenticate,
+  accessAuth,
   isUserSelf,
   validation.validateParam('userId', validation.idSchema),
   userController.getUserLikedProducts
@@ -503,7 +498,7 @@ router.get(
 
 router.get(
   '/:userId/likes/articles',
-  authenticate,
+  accessAuth,
   isUserSelf,
   validation.validateParam('userId', validation.idSchema),
   userController.getUserLikedArticles
@@ -511,7 +506,7 @@ router.get(
 
 router.get(
   '/:userId/likes/comments',
-  authenticate,
+  accessAuth,
   isUserSelf,
   validation.validateParam('userId', validation.idSchema),
   userController.getUserLikedComments

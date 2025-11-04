@@ -113,6 +113,13 @@ class ProductRepository {
       select: { productId: true },
     });
   }
+
+  findLiteById(productId: number) {
+    return prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, userId: true, name: true },
+    });
+  }
 }
 
 export const productRepository = new ProductRepository();

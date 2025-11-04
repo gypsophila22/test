@@ -78,6 +78,13 @@ class ArticleRepository {
       },
     });
   }
+
+  findLiteById(articleId: number) {
+    return prisma.article.findUnique({
+      where: { id: articleId },
+      select: { id: true, userId: true, title: true },
+    });
+  }
 }
 
 export const articleRepository = new ArticleRepository();

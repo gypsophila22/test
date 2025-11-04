@@ -6,6 +6,13 @@ class UserRepository {
     return prisma.user.findUnique({ where: { username } });
   }
 
+  findUsernameById(userId: number) {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true },
+    });
+  }
+
   async createUser(data: {
     username: string;
     email: string;

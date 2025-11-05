@@ -4,7 +4,7 @@ declare global {
   namespace Express {
     interface User {
       id: number; // prisma에서 id가 number면 number
-      username: string;
+      username?: string;
       email: string;
     }
 

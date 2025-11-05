@@ -9,7 +9,7 @@
   "scripts": {
     "seed": "tsx src/prisma/seed.ts",
     "postinstall": "npx prisma generate && npx prisma migrate deploy && npx prisma db seed",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
     "start": "nodemon dist/app.js",
@@ -41,16 +41,23 @@
     "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.5.2",
     "@types/passport": "^1.0.17",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
+    "@types/supertest": "^6.0.3",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "jest": "^29.7.0",
     "prisma": "^6.15.0",
+    "socket.io-client": "^4.8.1",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   }
 }

@@ -52,6 +52,8 @@ export function setupWebSocket(server: HTTPServer) {
     set.add(socket.id);
     userSockets.set(userId, set);
 
+    socket.emit('joined', { ok: true, userId });
+
     socket.on('disconnect', () => {
       const s = userSockets.get(userId);
       if (s) {
@@ -90,3 +92,19 @@ export const wsGateway = {
     }
   },
 };
+
+export function publishToUser(
+  _io: Server,
+  {
+    userId,
+    event,
+    payload,
+  }: { userId: number; event: 'notification'; payload: unknown }
+) {
+  if (!io) return;
+  const sockets = userSockets.get(userId);
+  if (!sockets) return;
+  for (const sid of sockets) {
+    io.to(sid).emit(event, payload);
+  }
+}

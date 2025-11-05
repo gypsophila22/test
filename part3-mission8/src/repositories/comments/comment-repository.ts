@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prismaClient.js';
+import { prisma } from '../../lib/prismaClient.js';
 
 export const commentRepository = {
   findById(commentId: number) {
@@ -6,7 +6,6 @@ export const commentRepository = {
       where: { id: commentId },
       include: {
         user: { select: { username: true } },
-        // 필요하다면 article / product도 select 가능
       },
     });
   },
@@ -41,7 +40,7 @@ export const commentRepository = {
   // 좋아요한 댓글 조회
   async findLikedComments(userId: number) {
     return prisma.comment.findMany({
-      where: { likes: { some: { userId } } }, // CommentLike 기준
+      where: { likes: { some: { userId } } },
     });
   },
 };

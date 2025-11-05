@@ -1,6 +1,6 @@
 import AppError from '../../lib/appError.js';
 import { commentService } from './comment-service.js';
-import { articleCommentRepository } from '../../repositories/article-cmt-repository.js';
+import { articleCommentRepository } from '../../repositories/comments/article-cmt-repository.js';
 import { commentLikeRepository } from '../../repositories/like-repository.js';
 import { notificationService } from '../notification-service.js';
 import { userRepository } from '../../repositories/user-repository.js';

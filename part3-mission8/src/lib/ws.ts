@@ -90,3 +90,19 @@ export const wsGateway = {
     }
   },
 };
+
+export function publishToUser(
+  _io: Server,
+  {
+    userId,
+    event,
+    payload,
+  }: { userId: number; event: 'notification'; payload: unknown }
+) {
+  if (!io) return;
+  const sockets = userSockets.get(userId);
+  if (!sockets) return;
+  for (const sid of sockets) {
+    io.to(sid).emit(event, payload);
+  }
+}

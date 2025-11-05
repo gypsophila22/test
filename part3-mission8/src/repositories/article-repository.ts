@@ -74,7 +74,7 @@ class ArticleRepository {
   async findLikedArticles(userId: number) {
     return prisma.article.findMany({
       where: {
-        likes: { some: { userId } }, // ArticleLike 테이블 기준
+        likes: { some: { userId } },
       },
     });
   }

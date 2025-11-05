@@ -20,7 +20,7 @@ export const notificationService = {
       productId,
     });
 
-    // ✅ 객체 1개로 전달 + data는 있을 때만 포함
+    // 객체 1개로 전달 + data는 있을 때만 포함
     wsGateway.notifyUser({
       userId: receiverUserId,
       type: notif.type,
@@ -59,7 +59,7 @@ export const notificationService = {
       commentId,
     });
 
-    // ✅ 객체 1개로 전달 + data는 있을 때만 포함
+    // 객체 1개로 전달 + data는 있을 때만 포함
     wsGateway.notifyUser({
       userId: receiverUserId,
       type: notif.type,
@@ -86,7 +86,7 @@ export const notificationService = {
 
     const notif = await notificationRepository.create({
       userId: receiverUserId,
-      type: 'NEW_COMMENT', // 도메인 타입 재사용
+      type: 'NEW_COMMENT',
       message,
       productId,
       commentId,

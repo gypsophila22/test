@@ -1,9 +1,9 @@
-import { prisma } from '../lib/prismaClient.js';
+import { prisma } from '../../lib/prismaClient.js';
 
 export const articleCommentRepository = {
   findByArticleId(articleId: number) {
     return prisma.comment.findMany({
-      where: { articleId }, // article에 속한 댓글만
+      where: { articleId },
       select: {
         id: true,
         content: true,

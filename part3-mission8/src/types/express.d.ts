@@ -9,7 +9,7 @@ declare global {
     }
 
     interface Request {
-      user?: User; // authenticate 미들웨어에서 세팅됨
+      user?: User;
     }
   }
 }

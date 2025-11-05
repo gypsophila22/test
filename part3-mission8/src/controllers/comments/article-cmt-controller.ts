@@ -1,25 +1,25 @@
 import type { Request, Response } from 'express';
-import { productCommentService } from '../services/comments/product-cmt-service.js';
+import { articleCommentService } from '../../services/comments/article-cmt-service.js';
 
-class ProductCommentController {
+class ArticleCommentController {
   async getComments(req: Request, res: Response) {
-    const idParam = req.params.productId;
-    const productId = parseInt(idParam!, 10);
+    const idParam = req.params.articleId;
+    const articleId = parseInt(idParam!, 10);
     const userId = req.user?.id;
-    const comments = await productCommentService.getCommentsByProductId(
-      productId,
+    const comments = await articleCommentService.getCommentsByArticleId(
+      articleId,
       userId
     );
     res.json(comments);
   }
 
   async createComment(req: Request, res: Response) {
-    const idParam = req.params.productId;
-    const productId = parseInt(idParam!, 10);
+    const idParam = req.params.articleId;
+    const articleId = parseInt(idParam!, 10);
     const { content } = req.body;
     const userId = req.user!.id;
-    const newComment = await productCommentService.createProductComment(
-      productId,
+    const newComment = await articleCommentService.createArticleComment(
+      articleId,
       content,
       userId
     );
@@ -31,7 +31,7 @@ class ProductCommentController {
     const commentId = parseInt(idParam!, 10);
     const { content } = req.body;
     const userId = req.user!.id;
-    const updated = await productCommentService.updateComment(
+    const updated = await articleCommentService.updateComment(
       commentId,
       userId,
       content
@@ -43,7 +43,7 @@ class ProductCommentController {
     const idParam = req.params.commentId;
     const commentId = parseInt(idParam!, 10);
     const userId = req.user!.id;
-    const result = await productCommentService.deleteComment(commentId, userId);
+    const result = await articleCommentService.deleteComment(commentId, userId);
     res.json(result);
   }
 
@@ -51,7 +51,7 @@ class ProductCommentController {
     const idParam = req.params.commentId;
     const commentId = parseInt(idParam!, 10);
     const userId = req.user!.id;
-    const result = await productCommentService.commentLike(userId, commentId);
+    const result = await articleCommentService.commentLike(userId, commentId);
     res.json(result);
   }
 
@@ -59,9 +59,9 @@ class ProductCommentController {
     const idParam = req.params.commentId;
     const commentId = parseInt(idParam!, 10);
     const userId = req.user!.id;
-    const result = await productCommentService.commentUnlike(userId, commentId);
+    const result = await articleCommentService.commentUnlike(userId, commentId);
     res.json(result);
   }
 }
 
-export const productCommentController = new ProductCommentController();
+export const articleCommentController = new ArticleCommentController();

@@ -10,7 +10,7 @@ import {
 } from '../lib/constants.js';
 import AppError from '../lib/appError.js';
 import { exclude } from '../lib/exclude.js';
-import type { UserProfile } from '../dtos/user-dto.js';
+import type { UserPublic } from '../dtos/user-dto.js';
 
 class UserService {
   async register(username: string, email: string, password: string) {
@@ -35,7 +35,7 @@ class UserService {
     return userRepository.findById(userId);
   }
 
-  async updateUserProfile(userId: number, updateData: UserProfile) {
+  async updateUserProfile(userId: number, updateData: UserPublic) {
     return userRepository.updateUser(userId, updateData);
   }
 

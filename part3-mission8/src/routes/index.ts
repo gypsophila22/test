@@ -4,8 +4,8 @@ import articleRouter from './article-router.js';
 import userRouter from './user-router.js';
 import imageRouter from '../image.js';
 import authRouter from './auth-router.js';
-import productCommentRouter from './product-cmt-router.js';
-import articleCommentRouter from './article-cmt-router.js';
+import productCommentRouter from './comments/product-cmt-router.js';
+import articleCommentRouter from './comments/article-cmt-router.js';
 import notificationRouter from './notification-router.js';
 
 const router = express.Router();

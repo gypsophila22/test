@@ -1,9 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 
 declare module '../lib/prismaClient.js' {
-  // 실제 코드에서 export const prisma = new PrismaClient()
   export const prisma: PrismaClient;
-  export default prisma;
 }
 
 declare module '../lib/ws.js' {

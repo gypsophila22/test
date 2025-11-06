@@ -13,7 +13,9 @@ import { setupWebSocket } from './lib/ws.js';
 dotenv.config();
 
 const PORT = Number(process.env.PORT) || 3000;
-const app = express();
+
+export const app = express();
+
 const server = http.createServer(app);
 
 app.use(
@@ -39,8 +41,9 @@ setupSwagger(app);
 
 app.use(errorHandler);
 
-setupWebSocket(server);
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  setupWebSocket(server);
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+}

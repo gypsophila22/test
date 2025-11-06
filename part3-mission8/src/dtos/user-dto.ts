@@ -8,7 +8,9 @@ export type RawUser = NonNullable<
 >;
 
 // Service 계층에서 DB에 업데이트할 때 사용하는 타입
-export type UserUpdateData = Prisma.UserUpdateInput;
+export type UserUpdateData = Partial<Omit<UserProfile, 'id'>>;
+
+export type UserPublic = Pick<UserProfile, 'username' | 'email' | 'images'>;
 
 // Prisma 유저 레코드에서 password 제거한 타입
 export type UserWithoutPassword = {

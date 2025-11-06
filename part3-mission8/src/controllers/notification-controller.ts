@@ -2,7 +2,7 @@ import { notificationService } from '../services/notification-service.js';
 import type { Request, Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../types/authenticated-request.js';
 
-export const notificationController = {
+class NotificationController {
   async getMyNotifications(req: Request, res: Response, next: NextFunction) {
     try {
       const { user } = req as AuthenticatedRequest;
@@ -11,7 +11,7 @@ export const notificationController = {
     } catch (e) {
       next(e);
     }
-  },
+  }
 
   async getMyUnreadCount(req: Request, res: Response, next: NextFunction) {
     try {
@@ -21,7 +21,7 @@ export const notificationController = {
     } catch (e) {
       next(e);
     }
-  },
+  }
 
   async markAsRead(req: Request, res: Response, next: NextFunction) {
     try {
@@ -32,7 +32,7 @@ export const notificationController = {
     } catch (e) {
       next(e);
     }
-  },
+  }
 
   async markAllAsRead(req: Request, res: Response, next: NextFunction) {
     try {
@@ -42,5 +42,7 @@ export const notificationController = {
     } catch (e) {
       next(e);
     }
-  },
-};
+  }
+}
+
+export const notificationController = new NotificationController();

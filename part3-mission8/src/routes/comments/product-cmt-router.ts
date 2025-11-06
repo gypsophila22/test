@@ -1,8 +1,8 @@
 import express from 'express';
-import { productCommentController } from '../controllers/comments/product-cmt-controller.js';
-import { validation } from '../middlewares/validation.js';
-import { isCommentOwner } from '../middlewares/authorize.js';
-import { accessAuth } from '../lib/passport/index.js';
+import { productCommentController } from '../../controllers/comments/product-cmt-controller.js';
+import { validation } from '../../middlewares/validation.js';
+import { isCommentOwner } from '../../middlewares/authorize.js';
+import { accessAuth } from '../../lib/passport/index.js';
 
 const router = express.Router();
 

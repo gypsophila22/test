@@ -1,8 +1,8 @@
 import express from 'express';
-import { articleCommentController } from '../controllers/comments/article-cmt-controller.js';
-import { validation } from '../middlewares/validation.js';
-import { isCommentOwner } from '../middlewares/authorize.js';
-import { accessAuth } from '../lib/passport/index.js';
+import { articleCommentController } from '../../controllers/comments/article-cmt-controller.js';
+import { validation } from '../../middlewares/validation.js';
+import { isCommentOwner } from '../../middlewares/authorize.js';
+import { accessAuth } from '../../lib/passport/index.js';
 
 const router = express.Router();
 

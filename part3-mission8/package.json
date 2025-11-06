@@ -9,7 +9,8 @@
   "scripts": {
     "seed": "tsx src/prisma/seed.ts",
     "postinstall": "npx prisma generate && npx prisma migrate deploy && npx prisma db seed",
-    "test": "jest",
+    "test": "NODE_ENV=test jest --runInBand",
+    "test:cov": "NODE_ENV=test jest --coverage --runInBand",
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
     "start": "nodemon dist/app.js",

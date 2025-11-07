@@ -1,6 +1,7 @@
-import { prisma } from '../lib/prismaClient.js';
 import bcrypt from 'bcrypt';
 import type { Request, RequestHandler } from 'express';
+
+import { prisma } from '../lib/prismaClient.js';
 
 // params에 어떤 키들이 올 수 있는지 제네릭으로 지정.
 type Params = { id?: string; commentId?: string; userId?: string };

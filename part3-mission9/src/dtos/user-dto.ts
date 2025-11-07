@@ -1,5 +1,3 @@
-// Prisma user update data 타입
-import type { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prismaClient.js';
 
 // prisma가 유저를 조회했을 때 나오는 실제 User 타입

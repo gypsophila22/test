@@ -1,4 +1,3 @@
-const base = require('./jest.base.cjs');
 /** @type {import('jest').Config} */
 module.exports = {
   projects: ['<rootDir>/jest.unit.config.cjs', '<rootDir>/jest.int.config.cjs'],

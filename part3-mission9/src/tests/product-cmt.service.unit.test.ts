@@ -6,13 +6,13 @@ import {
   afterEach,
   jest,
 } from '@jest/globals';
+
 import AppError from '../lib/appError.js';
-import { productCommentService } from '../services/comments/product-cmt-service.js';
+import { commentRepository } from '../repositories/comments/comment-repository.js';
 import { productCommentRepository } from '../repositories/comments/product-cmt-repository.js';
 import { commentLikeRepository } from '../repositories/like-repository.js';
-import { userRepository } from '../repositories/user-repository.js';
 import { productRepository } from '../repositories/product-repository.js';
-import { commentRepository } from '../repositories/comments/comment-repository.js';
+import { userRepository } from '../repositories/user-repository.js';
 import {
   makeProductLite,
   makeComment,
@@ -21,6 +21,7 @@ import {
   makeCommentLike,
 } from './_helper/factories.js';
 import { notificationRepository } from '../repositories/notification-repository.js';
+import { productCommentService } from '../services/comments/product-cmt-service.js';
 import { notificationService } from '../services/notification-service.js';
 
 describe('ProductCommentService', () => {

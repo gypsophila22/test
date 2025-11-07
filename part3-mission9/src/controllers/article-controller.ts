@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+
 import { articleService } from '../services/article-service.js';
 
 class ArticleController {
@@ -44,7 +45,7 @@ class ArticleController {
     const idParam = req.params.id;
     const id = parseInt(idParam!, 10);
     const userId = req.user!.id;
-    const result = await articleService.deleteArticle(id, userId);
+    await articleService.deleteArticle(id, userId);
     res.status(204).send();
   }
 

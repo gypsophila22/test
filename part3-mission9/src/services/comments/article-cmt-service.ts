@@ -1,10 +1,10 @@
-import AppError from '../../lib/appError.js';
 import { commentService } from './comment-service.js';
+import AppError from '../../lib/appError.js';
+import { articleRepository } from '../../repositories/article-repository.js';
 import { articleCommentRepository } from '../../repositories/comments/article-cmt-repository.js';
 import { commentLikeRepository } from '../../repositories/like-repository.js';
-import { notificationService } from '../notification-service.js';
 import { userRepository } from '../../repositories/user-repository.js';
-import { articleRepository } from '../../repositories/article-repository.js';
+import { notificationService } from '../notification-service.js';
 
 class ArticleCommentService {
   updateComment = commentService.updateComment;

@@ -1,6 +1,7 @@
 import passport from 'passport';
-import { localStrategy } from './localStrategy.js';
+
 import { accessTokenStrategy, refreshTokenStrategy } from './jwtStrategy.js';
+import { localStrategy } from './localStrategy.js';
 
 // 전략 등록
 passport.use('local', localStrategy);

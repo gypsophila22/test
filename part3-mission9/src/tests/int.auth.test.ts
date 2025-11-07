@@ -1,11 +1,11 @@
 import { jest } from '@jest/globals';
-import request from 'supertest';
 import bcrypt from 'bcrypt';
+import type { JwtPayload } from 'jsonwebtoken';
+import request from 'supertest';
+
 import { prisma } from '../lib/prismaClient.js';
 import { validation } from '../middlewares/validation.js';
 import { asMockFn, type Awaited } from './_helper/jest-typed.js';
-import type { JwtPayload } from 'jsonwebtoken';
-
 import {
   ACCESS_TOKEN_COOKIE_NAME,
   REFRESH_TOKEN_COOKIE_NAME,
@@ -21,24 +21,6 @@ function extractCookieUnsafe(res: any, name: string): string | null {
   const first = item.split(';', 1)[0];
   const eq = first.indexOf('=');
   return eq >= 0 ? first.slice(eq + 1) : null;
-}
-
-function corruptJwtSignature(tok: string): string {
-  return tok.replace(/.$/, (c) => (c === 'a' ? 'b' : 'a'));
-}
-
-function forgeJwtInvalidSignature(tok: string): string {
-  const parts = tok.split('.');
-  if (parts.length === 3) {
-    const [h, p, s] = parts;
-    if (!s || s.length < 1) return `${h}.${p}.bogussign`;
-    const flippedLast = s.slice(0, -1) + (s.at(-1) === 'a' ? 'b' : 'a');
-    return `${h}.${p}.${flippedLast}`;
-  }
-  if (parts.length === 2) {
-    return `${parts[0]}.${parts[1]}.bogussign`;
-  }
-  return tok.slice(0, -1) + (tok.endsWith('a') ? 'b' : 'a');
 }
 
 describe('[통합] 인증 (회원가입/로그인)', () => {
@@ -335,7 +317,6 @@ describe('[통합] 인증 (회원가입/로그인)', () => {
 
     // 5) 모듈 캐시 리셋 후 fresh import로 함수 단위 검증
     jest.resetModules();
-    const C2 = await import('../lib/constants.js'); // (동일 값이어야 정상)
     const { verifyRefreshToken } = await import('../lib/token.js');
 
     // 혹시 모르게 C2.SECRET과 BAD_SECRET이 같은지 확인 (디버깅용, 필요시 주석)

@@ -1,4 +1,5 @@
 import express, { type Request, type Response } from 'express';
+
 import upload from '../config/multer.js';
 
 const router = express.Router();

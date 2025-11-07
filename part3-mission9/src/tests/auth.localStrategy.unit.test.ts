@@ -1,6 +1,7 @@
 // src/tests/auth.localStrategy.int.test.ts
-import request from 'supertest';
 import bcrypt from 'bcrypt';
+import request from 'supertest';
+
 import { prisma } from '../lib/prismaClient.js';
 import { createPassportTestApp } from './_helper/test-passport-app.js';
 

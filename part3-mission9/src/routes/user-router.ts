@@ -1,10 +1,11 @@
 import express from 'express';
-import { userController } from '../controllers/user-controller.js';
+
+import { articleController } from '../controllers/article-controller.js';
 import { productController } from '../controllers/product-controller.js';
-import { validation } from '../middlewares/validation.js';
+import { userController } from '../controllers/user-controller.js';
 import { localAuth, accessAuth } from '../lib/passport/index.js';
 import { isUserSelf } from '../middlewares/authorize.js';
-import { articleController } from '../controllers/article-controller.js';
+import { validation } from '../middlewares/validation.js';
 
 const router = express.Router();
 

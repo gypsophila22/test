@@ -1,5 +1,6 @@
-import { notificationService } from '../services/notification-service.js';
 import type { Request, Response, NextFunction } from 'express';
+
+import { notificationService } from '../services/notification-service.js';
 import type { AuthenticatedRequest } from '../types/authenticated-request.js';
 
 class NotificationController {

@@ -1,8 +1,9 @@
-import { Server } from 'socket.io';
-import type { Server as HTTPServer } from 'http';
-import { parseUserIdFromToken } from './wsAuth.js';
 import type { NotificationType as PrismaNotificationType } from '@prisma/client';
 import { NotificationType as NotificationTypeValues } from '@prisma/client';
+import type { Server as HTTPServer } from 'http';
+import { Server } from 'socket.io';
+
+import { parseUserIdFromToken } from './wsAuth.js';
 import type { NotificationType } from '../types/notification.js';
 // 여러 기기 지원
 type UserSocketMap = Map<number, Set<string>>;
@@ -27,6 +28,7 @@ function mapDomainToWire(t: PrismaNotificationType): WireNotificationType {
       return 'chat';
     default: {
       // exhaustiveness 체크(컴파일 타임용)
+       
       const _never: never = t;
       // 안전망 (원하면 throw로 바꿔도 됨)
       return 'system';

@@ -1,11 +1,12 @@
+import { type JwtPayload } from 'jsonwebtoken';
 import {
   Strategy as JwtStrategy,
   ExtractJwt,
   type VerifiedCallback,
 } from 'passport-jwt';
-import { prisma } from '../prismaClient.js';
-import { type JwtPayload } from 'jsonwebtoken';
+
 import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } from '../constants.js';
+import { prisma } from '../prismaClient.js';
 
 const accessTokenOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

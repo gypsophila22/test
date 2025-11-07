@@ -1,16 +1,17 @@
 import bcrypt from 'bcrypt';
-import { userRepository } from '../repositories/user-repository.js';
-import { commentLikeRepository } from '../repositories/like-repository.js';
-import { generateTokens, verifyRefreshToken } from '../lib/token.js';
 import type { Response } from 'express';
+
+import type { UserPublic } from '../dtos/user-dto.js';
+import AppError from '../lib/appError.js';
 import {
   NODE_ENV,
   ACCESS_TOKEN_COOKIE_NAME,
   REFRESH_TOKEN_COOKIE_NAME,
 } from '../lib/constants.js';
-import AppError from '../lib/appError.js';
 import { exclude } from '../lib/exclude.js';
-import type { UserPublic } from '../dtos/user-dto.js';
+import { generateTokens, verifyRefreshToken } from '../lib/token.js';
+import { commentLikeRepository } from '../repositories/like-repository.js';
+import { userRepository } from '../repositories/user-repository.js';
 
 class UserService {
   async register(username: string, email: string, password: string) {

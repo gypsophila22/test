@@ -1,10 +1,11 @@
 import multer, { type FileFilterCallback } from 'multer';
 import path from 'path';
-import { fileURLToPath } from 'url';
+// import { fileURLToPath } from 'url';
+
 import { dirnameFromMeta } from '../lib/dirname.js';
 
 // ES 모듈에서 __dirname을 사용하기 위한 설정
-const __filename = fileURLToPath(import.meta.url);
+// const __filename = fileURLToPath(import.meta.url);
 const __dirname_safe = dirnameFromMeta(import.meta.url);
 
 // 파일 저장 경로 및 파일명 설정

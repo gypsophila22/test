@@ -1,9 +1,10 @@
 import './_helper/mock-modules.js';
+import request from 'supertest';
+
 import { createTestApp } from './_helper/test-app.js';
 import { prisma } from '../lib/prismaClient.js';
-import { loginAndGetSession } from './_helper/test-utils.js';
-import request from 'supertest';
 import { seedArticles } from './_helper/prisma-mock.js';
+import { loginAndGetSession } from './_helper/test-utils.js';
 
 describe('[통합] 게시글 API (인증 필요)', () => {
   let app: import('express').Express;

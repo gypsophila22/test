@@ -1,7 +1,8 @@
+import bcrypt from 'bcryptjs';
 import request from 'supertest';
+
 import { createTestApp } from './_helper/test-app.js';
 import { prisma } from '../lib/prismaClient.js';
-import bcrypt from 'bcryptjs';
 
 jest.setTimeout(20_000);
 

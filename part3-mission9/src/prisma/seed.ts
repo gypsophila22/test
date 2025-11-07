@@ -1,6 +1,7 @@
-import 'dotenv/config';
-import { prisma } from '../lib/prismaClient.js';
+// import 'dotenv/config';
 import bcrypt from 'bcrypt';
+
+import { prisma } from '../lib/prismaClient.js';
 
 const main = async () => {
   // 1️⃣ 유저 시드

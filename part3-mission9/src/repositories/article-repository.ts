@@ -1,6 +1,7 @@
-import { prisma } from '../lib/prismaClient.js';
 import type { Prisma } from '@prisma/client';
+
 import type { ArticleWithRelations } from '../dtos/article-dto.js';
+import { prisma } from '../lib/prismaClient.js';
 
 class ArticleRepository {
   async findMany(

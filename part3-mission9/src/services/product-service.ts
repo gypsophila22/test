@@ -1,12 +1,13 @@
 import { Prisma } from '@prisma/client';
-import { productRepository } from '../repositories/product-repository.js';
+
+import { notificationService } from './notification-service.js';
+import type { ProductQuery, UpdateProductDto } from '../dtos/product-dto.js';
+import AppError from '../lib/appError.js';
 import {
   productLikeRepository,
   commentLikeRepository,
 } from '../repositories/like-repository.js';
-import type { ProductQuery, UpdateProductDto } from '../dtos/product-dto.js';
-import AppError from '../lib/appError.js';
-import { notificationService } from './notification-service.js';
+import { productRepository } from '../repositories/product-repository.js';
 
 class ProductService {
   // 전체 상품 조회
@@ -162,7 +163,7 @@ class ProductService {
   async updateProductPrice(
     productId: number,
     newPrice: number,
-    actorUserId: number
+    _actorUserId: number
   ) {
     // 1. 기존 상품
     const product = await productRepository.findUnique(productId);

@@ -1,11 +1,12 @@
 import { Prisma } from '@prisma/client';
+
+import type { ArticleQuery, UpdateArticleDto } from '../dtos/article-dto.js';
+import AppError from '../lib/appError.js';
 import { articleRepository } from '../repositories/article-repository.js';
 import {
   articleLikeRepository,
   commentLikeRepository,
 } from '../repositories/like-repository.js';
-import type { ArticleQuery, UpdateArticleDto } from '../dtos/article-dto.js';
-import AppError from '../lib/appError.js';
 
 class ArticleService {
   // 전체 게시글 조회

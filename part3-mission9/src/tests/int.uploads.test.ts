@@ -1,7 +1,6 @@
-import request from 'supertest';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import request from 'supertest';
 
 describe('[통합] 이미지 업로드', () => {
   let app: import('express').Express;
@@ -89,12 +88,12 @@ describe('[통합] 이미지 업로드', () => {
         contentType: 'image/webp',
       });
     }
-    const res = await req.expect(400);
+    const _res = await req.expect(400);
   });
 
   test('파일 크기 초과(>5MB) → 400 (LIMIT_FILE_SIZE)', async () => {
     const big = Buffer.alloc(5 * 1024 * 1024 + 1, 0); // 5MB + 1
-    const res = await request(app)
+    const _res = await request(app)
       .post('/images/upload/single')
       .attach('myImage', big, { filename: 'e.jpg', contentType: 'image/jpeg' })
       .expect(400);

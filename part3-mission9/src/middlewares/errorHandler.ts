@@ -1,6 +1,6 @@
+import { Prisma } from '@prisma/client';
 import type { ErrorRequestHandler } from 'express';
 import multer from 'multer';
-import { Prisma } from '@prisma/client';
 
 /** ---- Custom Errors ---- */
 export class AppError extends Error {
@@ -123,10 +123,14 @@ function mapMulter(err: multer.MulterError) {
 
 /** ---- Error Handler ---- */
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
-  // eslint-disable-next-line no-console
   console.error((err as Error)?.stack ?? err);
 
   const isProd = process.env.NODE_ENV === 'production';
+  const isTest = process.env.NODE_ENV === 'test';
+
+  if (!isTest) {
+    console.error((err as Error)?.stack ?? err);
+  }
 
   // 기본값
   let status = 500;

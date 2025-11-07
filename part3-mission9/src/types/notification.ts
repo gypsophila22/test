@@ -1,5 +1,4 @@
 import type { NotificationType as PrismaNotificationType } from '@prisma/client';
-
 import { NotificationType as NotificationTypeValues } from '@prisma/client';
 
 export type NotificationType = PrismaNotificationType;

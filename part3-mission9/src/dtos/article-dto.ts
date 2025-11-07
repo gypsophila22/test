@@ -1,4 +1,5 @@
 import type { Prisma } from '@prisma/client';
+
 import { prisma } from '../lib/prismaClient.js';
 
 // DB에서 실제 Article 타입

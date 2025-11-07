@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+
 import { productCommentService } from '../../services/comments/product-cmt-service.js';
 
 class ProductCommentController {

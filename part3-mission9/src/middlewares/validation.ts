@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
-import { prisma } from '../lib/prismaClient.js';
 import { z } from 'zod';
-import type { ParsedQs } from 'qs';
+
+import { prisma } from '../lib/prismaClient.js';
 
 class Validation {
   // ------------------------------

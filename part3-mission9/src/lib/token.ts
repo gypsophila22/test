@@ -1,6 +1,7 @@
-import jwt, { type JwtPayload } from 'jsonwebtoken';
-import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } from './constants.js';
+import jwt from 'jsonwebtoken';
+
 import AppError from './appError.js';
+import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } from './constants.js';
 
 type AccessPayload = jwt.JwtPayload & { sub: number; type: 'access' };
 type RefreshPayload = jwt.JwtPayload & { sub: number; type: 'refresh' };

@@ -10,7 +10,7 @@ export function parseUserIdFromToken(rawToken: unknown): number | null {
     const { userId } = verifyAccessToken(rawToken); // <- token.ts에서 온 거 그대로 사용
     if (typeof userId !== 'number') return null;
     return userId;
-  } catch (err) {
+  } catch (_err) {
     // 토큰 만료 / 위조 등으로 verifyAccessToken이 에러 던지면 여기로 옴
     return null;
   }

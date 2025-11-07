@@ -1,7 +1,8 @@
 import './mock-modules.js';
-import request from 'supertest';
-import { prisma } from './prisma-mock.js';
 import bcrypt from 'bcrypt';
+import request from 'supertest';
+
+import { prisma } from './prisma-mock.js';
 
 export async function getPrismaMock() {
   return prisma;

@@ -1,6 +1,6 @@
+import AppError from '../../lib/appError.js';
 import { commentRepository } from '../../repositories/comments/comment-repository.js';
 import { commentLikeRepository } from '../../repositories/like-repository.js';
-import AppError from '../../lib/appError.js';
 
 class CommentService {
   async updateComment(commentId: number, userId: number, content: string) {

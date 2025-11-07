@@ -1,9 +1,10 @@
+import bcrypt from 'bcrypt';
 import * as PassportLocal from 'passport-local';
 const LocalStrategy = PassportLocal.Strategy;
-import bcrypt from 'bcrypt';
-import { prisma } from '../prismaClient.js';
-import type { AuthUser } from '../../types/authenticated-request.js';
 import type { IVerifyOptions } from 'passport-local';
+
+import type { AuthUser } from '../../types/authenticated-request.js';
+import { prisma } from '../prismaClient.js';
 
 export const localStrategy = new LocalStrategy(async function (
   username: string,

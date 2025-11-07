@@ -1,8 +1,9 @@
 import express from 'express';
+
 import { productController } from '../controllers/product-controller.js';
-import { validation } from '../middlewares/validation.js';
-import { isProductOwner } from '../middlewares/authorize.js';
 import { accessAuth } from '../lib/passport/index.js';
+import { isProductOwner } from '../middlewares/authorize.js';
+import { validation } from '../middlewares/validation.js';
 
 const router = express.Router();
 

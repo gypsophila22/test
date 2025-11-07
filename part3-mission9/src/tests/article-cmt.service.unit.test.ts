@@ -6,13 +6,9 @@ import {
   afterEach,
   jest,
 } from '@jest/globals';
+
 import AppError from '../lib/appError.js';
-import { articleCommentService } from '../services/comments/article-cmt-service.js';
-import { articleCommentRepository } from '../repositories/comments/article-cmt-repository.js';
-import { commentLikeRepository } from '../repositories/like-repository.js';
-import { userRepository } from '../repositories/user-repository.js';
 import { articleRepository } from '../repositories/article-repository.js';
-import { commentRepository } from '../repositories/comments/comment-repository.js';
 import {
   makeArticleLite,
   makeComment,
@@ -20,7 +16,12 @@ import {
   makeListedComment,
   makeCommentLike,
 } from './_helper/factories.js';
+import { articleCommentRepository } from '../repositories/comments/article-cmt-repository.js';
+import { commentRepository } from '../repositories/comments/comment-repository.js';
+import { commentLikeRepository } from '../repositories/like-repository.js';
 import { notificationRepository } from '../repositories/notification-repository.js';
+import { userRepository } from '../repositories/user-repository.js';
+import { articleCommentService } from '../services/comments/article-cmt-service.js';
 import { notificationService } from '../services/notification-service.js';
 
 describe('ArticleCommentService', () => {

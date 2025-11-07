@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import { notificationController } from '../controllers/notification-controller.js';
 import { accessAuth } from '../lib/passport/index.js';
 

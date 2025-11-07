@@ -1,17 +1,18 @@
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import http from 'http';
-import routes from './routes/index.js';
-import errorHandler from './middlewares/errorHandler.js';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
+
 import passport from './lib/passport/index.js';
-import { requestLogger } from './middlewares/logger.js';
-import { setupSwagger } from './swagger.js';
 import { setupWebSocket } from './lib/ws.js';
+import errorHandler from './middlewares/errorHandler.js';
+import { requestLogger } from './middlewares/logger.js';
+import routes from './routes/index.js';
+import { setupSwagger } from './swagger.js';
 
 export async function buildApp(opts: { forTest?: boolean } = {}) {
-  dotenv.config();
+  dotenv.config(process.env.NODE_ENV === 'test' ? { quiet: true } : undefined);
   const forTest = !!opts.forTest;
 
   const app = express();

@@ -1,5 +1,6 @@
 // product-type.ts
 import type { Prisma } from '@prisma/client';
+
 import { prisma } from '../lib/prismaClient.js';
 
 // DB에서 실제로 나오는 타입

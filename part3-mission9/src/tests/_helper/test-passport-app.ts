@@ -1,5 +1,6 @@
 import express from 'express';
 import passport from 'passport';
+
 import { localStrategy } from '../../lib/passport/localStrategy.js'; // 기존 코드 그대로
 
 export function createPassportTestApp() {

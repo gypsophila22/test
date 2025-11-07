@@ -2,7 +2,7 @@ import express from 'express';
 import productRouter from './product-router.js';
 import articleRouter from './article-router.js';
 import userRouter from './user-router.js';
-import imageRouter from '../image.js';
+import imageRouter from './image-router.js';
 import authRouter from './auth-router.js';
 import productCommentRouter from './comments/product-cmt-router.js';
 import articleCommentRouter from './comments/article-cmt-router.js';

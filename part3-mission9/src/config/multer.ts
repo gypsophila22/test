@@ -29,11 +29,10 @@ const fileFilter = (
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(
-      new Error(
-        '허용되지 않는 파일 형식입니다. 이미지 파일만 업로드할 수 있습니다.'
-      )
-    );
+    const err = new multer.MulterError('LIMIT_UNEXPECTED_FILE');
+    (err as unknown as { message: string }).message =
+      '이미지 파일만 업로드할 수 있습니다.';
+    cb(err);
   }
 };
 

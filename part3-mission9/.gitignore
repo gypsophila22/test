@@ -19,3 +19,9 @@ generated/
 
 # Build output
 dist/
+
+# Test coverage outputs
+coverage/
+*.lcov
+lcov.info
+.nyc_output/

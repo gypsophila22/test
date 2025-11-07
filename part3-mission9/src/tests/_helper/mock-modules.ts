@@ -1,51 +1,26 @@
-import { jest } from '@jest/globals';
+import { prisma } from './prisma-mock.js';
 
-type OneArgAsync<R = any> = (args: any) => Promise<R>;
-type OptArgAsync<R = any> = (args?: any) => Promise<R>;
+export async function setupPrismaMock() {
+  jest.resetModules();
+  // @ts-expect-error: unstable_mockModule은 타입 선언이 없음 (런타임 전용)
+  await jest.unstable_mockModule('../../lib/prismaClient.js', () => ({
+    __esModule: true,
+    prisma,
+    default: prisma,
+  }));
+}
 
-export type PrismaMock = {
-  user: {
-    findUnique: jest.MockedFunction<OneArgAsync<any | null>>;
-    create: jest.MockedFunction<OneArgAsync<any>>;
-    update: jest.MockedFunction<OneArgAsync<any>>;
-  };
-  product: {
-    findMany: jest.MockedFunction<OptArgAsync<any[]>>;
-    findUnique: jest.MockedFunction<OneArgAsync<any | null>>;
-    create: jest.MockedFunction<OneArgAsync<any>>;
-    update: jest.MockedFunction<OneArgAsync<any>>;
-    delete: jest.MockedFunction<OneArgAsync<any>>;
-  };
-  article: {
-    findMany: jest.MockedFunction<OptArgAsync<any[]>>;
-    findUnique: jest.MockedFunction<OneArgAsync<any | null>>;
-    create: jest.MockedFunction<OneArgAsync<any>>;
-    update: jest.MockedFunction<OneArgAsync<any>>;
-    delete: jest.MockedFunction<OneArgAsync<any>>;
-  };
-};
-
-// ✅ 단일 인스턴스 (테스트 전체에서 공유)
-export const prisma: PrismaMock = {
-  user: {
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-  },
-  product: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
-  article: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
-};
-
-export default prisma;
+// 필요할 때만 추가 모듈 주입
+/*
+await jest.unstable_mockModule('../../lib/token.js', () => ({
+  __esModule: true,
+  generateTokens: jest.fn().mockReturnValue({ accessToken: 'acc', refreshToken: 'ref' }),
+  verifyRefreshToken: jest.fn().mockReturnValue({ userId: 7 }),
+}));
+await jest.unstable_mockModule('../../lib/constants.js', () => ({
+  __esModule: true,
+  NODE_ENV: 'test',
+  ACCESS_TOKEN_COOKIE_NAME: 'AT',
+  REFRESH_TOKEN_COOKIE_NAME: 'RT',
+}));
+*/

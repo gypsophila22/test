@@ -45,6 +45,17 @@ export type ProductLikeRecord = {
   productId: number;
   userId: number;
 };
+
+export type NotificationRecord = {
+  id: number;
+  userId: number;
+  type: 'COMMENT' | 'LIKE' | 'SYSTEM' | string; // 프로젝트에 맞게 열거형 쓰세요
+  message: string;
+  isRead: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 type CommentLikeRecord = { id: number; commentId: number; userId: number };
 
 /* ---------- Select/Args helpers ---------- */
@@ -90,6 +101,7 @@ const db: {
   articleLikes: ArticleLikeRecord[];
   productLikes: ProductLikeRecord[];
   commentLikes: CommentLikeRecord[];
+  notifications: NotificationRecord[];
 } = {
   users: [],
   articles: [],
@@ -97,9 +109,18 @@ const db: {
   articleLikes: [],
   productLikes: [],
   commentLikes: [],
+  notifications: [],
 };
 
-let seq = { user: 1, article: 1, product: 1, aLike: 1, pLike: 1, cLike: 1 };
+let seq = {
+  user: 1,
+  article: 1,
+  product: 1,
+  aLike: 1,
+  pLike: 1,
+  cLike: 1,
+  notif: 1,
+};
 
 /* ---------- Utils ---------- */
 function pickUserBy(where: UserWhereUnique): UserRecord | undefined {
@@ -153,7 +174,6 @@ function isNumArray(x: unknown): x is number[] {
 }
 
 function wantsCount(v: unknown, key: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const obj = v as any;
   return !!(obj && (obj._all || obj[key]));
 }
@@ -310,10 +330,12 @@ export const prisma = {
     findMany: jest.fn(async (_args?: unknown) =>
       db.articles.map((a) => ensureArticleArrays({ ...a }))
     ),
+
     findUnique: jest.fn(async (args: { where: { id: number } }) => {
       const f = db.articles.find((a) => a.id === args.where.id);
       return f ? ensureArticleArrays({ ...f }) : null;
     }),
+
     count: jest.fn(
       async (args?: {
         where?: {
@@ -392,7 +414,6 @@ export const prisma = {
       db.products.map((p) => ensureProductArrays({ ...p }))
     ),
 
-    // ✅ select 지원 + 제네릭 반환
     findUnique: jest.fn(
       async <A extends FindUniqueProductArgs>(
         args: A
@@ -545,6 +566,112 @@ export const prisma = {
       }
     ),
   },
+
+  notification: {
+    findMany: jest.fn(
+      async (args?: {
+        where?: { userId?: number; isRead?: boolean };
+        orderBy?: { createdAt?: 'asc' | 'desc' };
+        skip?: number;
+        take?: number;
+      }) => {
+        let list = db.notifications.slice();
+
+        if (args?.where?.userId !== undefined) {
+          list = list.filter((n) => n.userId === args.where!.userId);
+        }
+        if (args?.where?.isRead !== undefined) {
+          list = list.filter((n) => n.isRead === args.where!.isRead);
+        }
+
+        if (args?.orderBy?.createdAt) {
+          const dir = args.orderBy.createdAt === 'asc' ? 1 : -1;
+          list.sort(
+            (a, b) => (a.createdAt.getTime() - b.createdAt.getTime()) * dir
+          );
+        }
+
+        const start = args?.skip ?? 0;
+        const end = args?.take != null ? start + args.take : undefined;
+        return list.slice(start, end).map((n) => ({ ...n }));
+      }
+    ),
+
+    count: jest.fn(
+      async (args?: { where?: { userId?: number; isRead?: boolean } }) => {
+        return db.notifications.filter((n) => {
+          if (
+            args?.where?.userId !== undefined &&
+            n.userId !== args.where!.userId
+          )
+            return false;
+          if (
+            args?.where?.isRead !== undefined &&
+            n.isRead !== args.where!.isRead
+          )
+            return false;
+          return true;
+        }).length;
+      }
+    ),
+
+    updateMany: jest.fn(
+      async (args: {
+        where?: { userId?: number; isRead?: boolean };
+        data: Partial<Pick<NotificationRecord, 'isRead' | 'message' | 'type'>>;
+      }) => {
+        let count = 0;
+        for (const n of db.notifications) {
+          const userOk =
+            args.where?.userId === undefined || n.userId === args.where!.userId;
+          const readOk =
+            args.where?.isRead === undefined || n.isRead === args.where!.isRead;
+          if (userOk && readOk) {
+            Object.assign(n, args.data, { updatedAt: new Date() });
+            count++;
+          }
+        }
+        return { count };
+      }
+    ),
+
+    update: jest.fn(
+      async (args: {
+        where: { id: number };
+        data: Partial<Pick<NotificationRecord, 'isRead' | 'message' | 'type'>>;
+      }) => {
+        const target = db.notifications.find((n) => n.id === args.where.id);
+        if (!target) {
+          const e = new Error('Not found') as Error & { code: string };
+          e.code = 'P2025';
+          throw e;
+        }
+        Object.assign(target, args.data, { updatedAt: new Date() });
+        return { ...target };
+      }
+    ),
+
+    create: jest.fn(
+      async (args: {
+        data: Omit<NotificationRecord, 'id' | 'createdAt' | 'updatedAt'>;
+      }) => {
+        const now = new Date();
+        const rec: NotificationRecord = {
+          id: seq.notif++,
+          createdAt: now,
+          updatedAt: now,
+          ...args.data,
+        };
+        db.notifications.push(rec);
+        return { ...rec };
+      }
+    ),
+
+    findUnique: jest.fn(async (args: { where: { id: number } }) => {
+      const n = db.notifications.find((x) => x.id === args.where.id);
+      return n ? { ...n } : null;
+    }),
+  },
 };
 
 export default prisma;
@@ -557,7 +684,15 @@ export function prismaReset(): void {
   db.articleLikes = [];
   db.productLikes = [];
   db.commentLikes = [];
-  seq = { user: 1, article: 1, product: 1, aLike: 1, pLike: 1, cLike: 1 };
+  seq = {
+    user: 1,
+    article: 1,
+    product: 1,
+    aLike: 1,
+    pLike: 1,
+    cLike: 1,
+    notif: 1,
+  };
 
   prisma.user.create.mockClear();
   prisma.user.findUnique.mockClear();
@@ -585,6 +720,13 @@ export function prismaReset(): void {
   prisma.productLike.groupBy.mockClear();
   prisma.commentLike.count.mockClear();
   prisma.commentLike.groupBy.mockClear();
+
+  prisma.notification.findMany.mockClear();
+  prisma.notification.count.mockClear();
+  prisma.notification.updateMany.mockClear();
+  prisma.notification.update.mockClear();
+  prisma.notification.create.mockClear();
+  prisma.notification.findUnique.mockClear();
 }
 
 export function seedArticles(
@@ -632,13 +774,35 @@ export function seedArticleLikes(
 ): void {
   for (const x of pairs) db.articleLikes.push({ id: seq.aLike++, ...x });
 }
+
 export function seedProductLikes(
   pairs: ReadonlyArray<Pick<ProductLikeRecord, 'productId' | 'userId'>>
 ): void {
   for (const x of pairs) db.productLikes.push({ id: seq.pLike++, ...x });
 }
+
 export function seedCommentLikes(
   list: Array<Pick<CommentLikeRecord, 'commentId' | 'userId'>>
 ): void {
   for (const x of list) db.commentLikes.push({ id: seq.cLike++, ...x });
+}
+
+export function seedNotifications(
+  list: Array<
+    Omit<NotificationRecord, 'id' | 'createdAt' | 'updatedAt'> &
+      Partial<Pick<NotificationRecord, 'id' | 'createdAt' | 'updatedAt'>>
+  >
+): void {
+  for (const n of list) {
+    const now = new Date();
+    db.notifications.push({
+      id: n.id ?? seq.notif++,
+      userId: n.userId,
+      type: n.type,
+      message: n.message,
+      isRead: n.isRead ?? false,
+      createdAt: n.createdAt ?? now,
+      updatedAt: n.updatedAt ?? now,
+    });
+  }
 }

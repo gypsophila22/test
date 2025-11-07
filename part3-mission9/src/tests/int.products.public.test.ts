@@ -17,8 +17,22 @@ describe('[통합] 게시글 API (비인증)', () => {
   beforeEach(() => {
     prismaReset();
     seedProducts([
-      { id: 21, name: 'B', images: ['b1.png'], tags: [] },
-      { id: 22, name: 'C', images: ['c1.png'], tags: [] },
+      {
+        id: 21,
+        name: 'B',
+        userId: 101,
+        price: 999,
+        images: ['b1.png'],
+        tags: [],
+      },
+      {
+        id: 22,
+        name: 'C',
+        userId: 101,
+        price: 999,
+        images: ['c1.png'],
+        tags: [],
+      },
     ]);
     seedProductLikes([
       { productId: 21, userId: 1 },

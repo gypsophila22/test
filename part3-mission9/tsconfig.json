@@ -19,5 +19,10 @@
     "esModuleInterop": true,
     "moduleResolution": "nodenext"
   },
-  "include": ["src", "prisma/**/*", "src/generated/prisma/**/*"]
+  "include": [
+    "src",
+    "prisma/**/*",
+    "src/generated/prisma/**/*",
+    "jest.unit.config.cjs"
+  ]
 }

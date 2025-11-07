@@ -9,20 +9,15 @@ const router = express.Router();
 router.post('/refresh', async (req, res) => {
   try {
     const refreshToken = req.cookies[REFRESH_TOKEN_COOKIE_NAME];
-    if (!refreshToken)
-      return res.status(401).json({ message: 'No refresh token' });
+    if (!refreshToken) return res.status(401).json({ message: '인증 오류' });
 
     const { userId } = verifyRefreshToken(refreshToken);
     const { accessToken, refreshToken: newRefreshToken } =
       generateTokens(userId);
-
     userService.setTokenCookies(res, accessToken, newRefreshToken);
-
     return res.json({ accessToken });
   } catch (err) {
-    return res
-      .status(401)
-      .json({ message: '유효하지 않거나 만료된 리프레시 토큰' });
+    return res.status(401).json({ message: '인증 오류' });
   }
 });
 

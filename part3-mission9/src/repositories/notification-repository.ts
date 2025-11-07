@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prismaClient.js';
+import { AppError } from '../middlewares/errorHandler.js';
 import { type NotificationCreateInput } from '../types/notification.js';
 
 class NotificationRepository {
@@ -26,11 +27,15 @@ class NotificationRepository {
     });
   }
 
-  markAsRead(userId: number, notificationId: number) {
-    return prisma.notification.updateMany({
+  async markAsRead(userId: number, notificationId: number) {
+    const r = await prisma.notification.updateMany({
       where: { id: notificationId, userId },
       data: { isRead: true },
     });
+    if (r.count === 0) {
+      throw new AppError('요청이 허용되지 않습니다.', 403);
+    }
+    return r;
   }
 
   markAllAsRead(userId: number) {

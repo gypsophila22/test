@@ -52,7 +52,7 @@ class ArticleCommentService {
       // 4) 작성자명 → 레포
       const commenter = await userRepository.findUsernameById(userId);
 
-      await notificationService.pushNewComment({
+      await notificationService.pushArticleComment({
         receiverUserId: article.userId, // 글 작성자
         articleId: article.id,
         commentId: comment.id,

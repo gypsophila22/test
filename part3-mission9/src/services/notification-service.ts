@@ -1,5 +1,5 @@
+import { ports } from '../lib/ports.js';
 import { notificationRepository } from '../repositories/notification-repository.js';
-import { wsGateway } from '../lib/ws.js';
 
 export const notificationService = {
   async pushPriceChange(args: {
@@ -21,7 +21,7 @@ export const notificationService = {
     });
 
     // 객체 1개로 전달 + data는 있을 때만 포함
-    wsGateway.notifyUser({
+    ports.ws.notifyUser({
       userId: receiverUserId,
       type: notif.type,
       message: notif.message,
@@ -34,7 +34,7 @@ export const notificationService = {
     return notif;
   },
 
-  async pushNewComment(args: {
+  async pushArticleComment(args: {
     receiverUserId: number;
     articleId: number;
     commentId: number;
@@ -60,7 +60,7 @@ export const notificationService = {
     });
 
     // 객체 1개로 전달 + data는 있을 때만 포함
-    wsGateway.notifyUser({
+    ports.ws.notifyUser({
       userId: receiverUserId,
       type: notif.type,
       message: notif.message,
@@ -92,7 +92,7 @@ export const notificationService = {
       commentId,
     });
 
-    wsGateway.notifyUser({
+    ports.ws.notifyUser({
       userId: receiverUserId,
       type: notif.type,
       message: notif.message,

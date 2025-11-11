@@ -22,27 +22,6 @@ class CommentRepository {
       where: { id: commentId, userId },
     });
   }
-
-  // 내가 쓴 댓글들 조회
-  async findUserComments(userId: number) {
-    return prisma.comment.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        content: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-  }
-
-  // 좋아요한 댓글 조회
-  async findLikedComments(userId: number) {
-    return prisma.comment.findMany({
-      where: { likes: { some: { userId } } },
-    });
-  }
 }
 
 export const commentRepository = new CommentRepository();

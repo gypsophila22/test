@@ -3,13 +3,13 @@ import bcrypt from 'bcrypt';
 import type { JwtPayload } from 'jsonwebtoken';
 import request from 'supertest';
 
-import { prisma } from '../lib/prismaClient.js';
-import { validation } from '../middlewares/validation.js';
-import { asMockFn, type Awaited } from './_helper/jest-typed.js';
+import { prisma } from '../../lib/prismaClient.js';
+import { validation } from '../../middlewares/validation.js';
+import { asMockFn, type Awaited } from '../_helper/jest-typed.js';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
   REFRESH_TOKEN_COOKIE_NAME,
-} from '../lib/constants.js';
+} from '../../lib/constants.js';
 
 function extractCookieUnsafe(res: any, name: string): string | null {
   const raw = res.get('Set-Cookie');
@@ -43,7 +43,7 @@ describe('[통합] 인증 (회원가입/로그인)', () => {
       return Promise.resolve();
     }) as typeof validation.validateRegister);
 
-    const { createTestApp } = await import('./_helper/test-app.js');
+    const { createTestApp } = await import('../_helper/test-app.js');
     app = await createTestApp();
   });
 
@@ -299,7 +299,7 @@ describe('[통합] 인증 (회원가입/로그인)', () => {
 
     // 3) 동일 payload로 "다른 시크릿" 재서명 → forged
     const jwt = (await import('jsonwebtoken')).default;
-    const C1 = await import('../lib/constants.js');
+    const C1 = await import('../../lib/constants.js');
 
     const decoded = jwt.decode(refreshRaw!) as JwtPayload | null;
     const sub = (decoded?.sub as unknown as number) ?? 777;
@@ -317,7 +317,7 @@ describe('[통합] 인증 (회원가입/로그인)', () => {
 
     // 5) 모듈 캐시 리셋 후 fresh import로 함수 단위 검증
     jest.resetModules();
-    const { verifyRefreshToken } = await import('../lib/token.js');
+    const { verifyRefreshToken } = await import('../../lib/token.js');
 
     // 혹시 모르게 C2.SECRET과 BAD_SECRET이 같은지 확인 (디버깅용, 필요시 주석)
     // expect(BAD_SECRET).not.toBe(C2.REFRESH_TOKEN_SECRET);

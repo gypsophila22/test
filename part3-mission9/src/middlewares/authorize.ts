@@ -51,14 +51,20 @@ export const isCommentOwner = isOwner((req) =>
 
 // 본인인지 체크
 export const isUserSelf: RequestHandler = (req, res, next) => {
-  const userIdParam = parseInt((req.params.userId ?? '') as string, 10);
+  // :userId 또는 :id 둘 다 지원
+  const targetIdRaw = (req.params.userId ?? req.params.id) as
+    | string
+    | undefined;
+  const targetId = Number.parseInt(targetIdRaw ?? '', 10);
+
   const reqUserId = (req.user as { id?: number } | undefined)?.id;
 
   if (typeof reqUserId !== 'number') {
     return res.status(401).json({ message: '로그인이 필요합니다.' });
   }
 
-  if (Number.isNaN(userIdParam) || userIdParam !== reqUserId) {
+  // 파라미터가 없거나 숫자가 아니면 권한 없음으로 처리(요구사항에 따라 400으로 바꿀 수도 있음)
+  if (!Number.isFinite(targetId) || targetId !== reqUserId) {
     return res.status(403).json({ message: '권한이 없습니다.' });
   }
 

@@ -19,8 +19,8 @@ export const productCommentRepository = {
     return prisma.comment.create({
       data: {
         content,
-        user: { connect: { id: userId } },
-        product: { connect: { id: productId } },
+        userId,
+        productId,
       },
     });
   },

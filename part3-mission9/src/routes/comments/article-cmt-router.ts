@@ -12,6 +12,7 @@ router
   .get(articleCommentController.getComments)
   .post(
     accessAuth,
+    validation.validateParam('articleId', validation.idSchema),
     validation.validate(validation.commentSchema),
     articleCommentController.createComment
   );

@@ -91,7 +91,7 @@ class ProductController {
   async getUserProducts(req: Request, res: Response) {
     const userId = req.user!.id;
     const products = await productService.getUserProducts(userId);
-    res.status(200).json({ products });
+    res.status(200).json({ data: products });
   }
 }
 

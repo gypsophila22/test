@@ -58,6 +58,9 @@ class UserController {
   async updatePassword(req: Request, res: Response) {
     const idParam = req.params.userId;
     const userId = parseInt(idParam!, 10);
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({ message: '잘못된 사용자 ID 입니다.' });
+    }
     const { currentPassword, newPassword, newPasswordConfirm } = req.body;
     if (newPassword !== newPasswordConfirm) {
       return res
@@ -72,6 +75,9 @@ class UserController {
   async getUserComments(req: Request, res: Response) {
     const idParam = req.params.userId;
     const userId = parseInt(idParam!, 10);
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({ message: '잘못된 사용자 ID 입니다.' });
+    }
     const comments = await userService.getUserComments(userId);
     res.status(200).json({ comments });
   }
@@ -80,6 +86,9 @@ class UserController {
   async getUserLikedProducts(req: Request, res: Response) {
     const idParam = req.params.userId;
     const userId = parseInt(idParam!, 10);
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({ message: '잘못된 사용자 ID 입니다.' });
+    }
     const likedProducts = await productService.getUserLikedProducts(userId);
     res.json({ data: likedProducts });
   }
@@ -88,6 +97,9 @@ class UserController {
   async getUserLikedArticles(req: Request, res: Response) {
     const idParam = req.params.userId;
     const userId = parseInt(idParam!, 10);
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({ message: '잘못된 사용자 ID 입니다.' });
+    }
     const likedArticles = await articleService.getUserLikedArticles(userId);
     res.json({ data: likedArticles });
   }
@@ -96,6 +108,9 @@ class UserController {
   async getUserLikedComments(req: Request, res: Response) {
     const idParam = req.params.userId;
     const userId = parseInt(idParam!, 10);
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({ message: '잘못된 사용자 ID 입니다.' });
+    }
     const likedComments = await userService.getUserLikedComments(userId);
     res.json({ data: likedComments });
   }

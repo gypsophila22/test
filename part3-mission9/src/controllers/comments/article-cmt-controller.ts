@@ -11,7 +11,7 @@ class ArticleCommentController {
       articleId,
       userId
     );
-    res.json(comments);
+    res.json({ data: comments });
   }
 
   async createComment(req: Request, res: Response) {
@@ -24,7 +24,7 @@ class ArticleCommentController {
       content,
       userId
     );
-    res.status(201).json(newComment);
+    return res.status(201).json({ data: newComment });
   }
 
   async updateComment(req: Request, res: Response) {
@@ -37,15 +37,15 @@ class ArticleCommentController {
       userId,
       content
     );
-    res.json(updated);
+    res.json({ data: updated });
   }
 
   async deleteComment(req: Request, res: Response) {
     const idParam = req.params.commentId;
     const commentId = parseInt(idParam!, 10);
     const userId = req.user!.id;
-    const result = await articleCommentService.deleteComment(commentId, userId);
-    res.json(result);
+    await articleCommentService.deleteComment(commentId, userId);
+    return res.status(204).send();
   }
 
   async likeComment(req: Request, res: Response) {
@@ -53,7 +53,7 @@ class ArticleCommentController {
     const commentId = parseInt(idParam!, 10);
     const userId = req.user!.id;
     const result = await articleCommentService.commentLike(userId, commentId);
-    res.json(result);
+    res.status(200).json({ data: result });
   }
 
   async unlikeComment(req: Request, res: Response) {
@@ -61,7 +61,7 @@ class ArticleCommentController {
     const commentId = parseInt(idParam!, 10);
     const userId = req.user!.id;
     const result = await articleCommentService.commentUnlike(userId, commentId);
-    res.json(result);
+    res.status(200).json({ data: result });
   }
 }
 

@@ -10,18 +10,36 @@ export async function getPrismaMock() {
 
 export async function loginAndGetSession(
   app: import('express').Express,
-  opts?: { loginPath?: string; username?: string; password?: string }
+  opts?: {
+    loginPath?: string;
+    username?: string;
+    password?: string;
+    userId?: number;
+    seedDb?: boolean;
+    resetBeforeSeed?: boolean;
+  }
 ) {
   const {
     loginPath = '/users/login',
     username = 'u',
     password = 'pw',
+    userId = 7,
+    seedDb = false,
+    resetBeforeSeed = false,
   } = opts ?? {};
+
+  if (seedDb) {
+    const { prismaReset, seedUsersWithHash } = await import('./prisma-mock.js');
+    if (resetBeforeSeed) prismaReset();
+    await seedUsersWithHash([
+      { id: userId, username, email: 'u@ex.com', password }, // password는 평문으로 넘기면 함수가 bcrypt 해시
+    ]);
+  }
+
   const prisma = await getPrismaMock();
 
-  // DB에 저장된 해시를 리턴하도록 mock
   prisma.user.findUnique.mockResolvedValue({
-    id: 7,
+    id: userId,
     username,
     email: 'u@ex.com',
     password: await bcrypt.hash(password, 10),
@@ -41,5 +59,5 @@ export async function loginAndGetSession(
   ).map((c) => c.split(';')[0]);
   const accessToken = res.body?.accessToken as string | undefined;
 
-  return { cookies: cookiePairs, accessToken };
+  return { cookies: cookiePairs, accessToken, user: { id: userId, username } };
 }

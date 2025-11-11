@@ -8,7 +8,7 @@ describe('[통합] 이미지 업로드', () => {
   const savedDir = path.join(projectRoot, 'src', 'uploads', 'saved');
 
   beforeAll(async () => {
-    const { createTestApp } = await import('./_helper/test-app.js');
+    const { createTestApp } = await import('../_helper/test-app.js');
     app = await createTestApp();
 
     fs.mkdirSync(savedDir, { recursive: true });

@@ -61,15 +61,15 @@ class ArticleController {
     const userId = req.user!.id;
     const idParam = req.params.id;
     const articleId = parseInt(idParam!, 10);
-    const article = await articleService.articleUnlike(userId, articleId);
-    res.json({ data: article });
+    const result = await articleService.articleUnlike(userId, articleId);
+    res.status(200).json({ data: result });
   }
 
   // 본인이 작성한 게시글 조회
   async getUserArticles(req: Request, res: Response) {
     const userId = req.user!.id;
     const articles = await articleService.getUserArticles(userId);
-    res.status(200).json({ articles });
+    res.status(200).json({ data: articles });
   }
 }
 

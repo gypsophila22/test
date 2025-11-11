@@ -7,22 +7,22 @@ import {
   jest,
 } from '@jest/globals';
 
-import AppError from '../lib/appError.js';
-import { articleRepository } from '../repositories/article-repository.js';
+import AppError from '../../lib/appError.js';
+import { articleRepository } from '../../repositories/article-repository.js';
+import { articleCommentRepository } from '../../repositories/comments/article-cmt-repository.js';
+import { commentRepository } from '../../repositories/comments/comment-repository.js';
+import { commentLikeRepository } from '../../repositories/like-repository.js';
+import { notificationRepository } from '../../repositories/notification-repository.js';
+import { userRepository } from '../../repositories/user-repository.js';
+import { articleCommentService } from '../../services/comments/article-cmt-service.js';
+import { notificationService } from '../../services/notification-service.js';
 import {
   makeArticleLite,
   makeComment,
   makeNotification,
   makeListedComment,
   makeCommentLike,
-} from './_helper/factories.js';
-import { articleCommentRepository } from '../repositories/comments/article-cmt-repository.js';
-import { commentRepository } from '../repositories/comments/comment-repository.js';
-import { commentLikeRepository } from '../repositories/like-repository.js';
-import { notificationRepository } from '../repositories/notification-repository.js';
-import { userRepository } from '../repositories/user-repository.js';
-import { articleCommentService } from '../services/comments/article-cmt-service.js';
-import { notificationService } from '../services/notification-service.js';
+} from '../_helper/factories.js';
 
 describe('ArticleCommentService', () => {
   const ARTICLE_ID = 10;
@@ -86,7 +86,7 @@ describe('ArticleCommentService', () => {
       );
 
     const { notificationService } = await import(
-      '../services/notification-service.js'
+      '../../services/notification-service.js'
     );
     const pushSpy = jest
       .spyOn(notificationService, 'pushArticleComment')
@@ -124,7 +124,7 @@ describe('ArticleCommentService', () => {
       .mockResolvedValue({ username: '댓글쓴이' });
 
     const { notificationService } = await import(
-      '../services/notification-service.js'
+      '../../services/notification-service.js'
     );
     const pushSpy = jest
       .spyOn(notificationService, 'pushArticleComment')

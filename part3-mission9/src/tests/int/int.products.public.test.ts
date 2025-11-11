@@ -5,8 +5,8 @@ import {
   seedProducts,
   seedProductLikes,
   seedCommentLikes,
-} from './_helper/prisma-mock.js';
-import { createTestApp } from './_helper/test-app.js';
+} from '../_helper/prisma-mock.js';
+import { createTestApp } from '../_helper/test-app.js';
 
 describe('[통합] 게시글 API (비인증)', () => {
   let app: import('express').Express;

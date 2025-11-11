@@ -76,16 +76,32 @@ class Validation {
     ),
   });
 
-  passwordSchema = z.object({
-    password: z
-      .string()
-      .min(8, '비밀번호는 최소 8자 이상이어야 합니다.')
-      .max(64, '비밀번호는 최대 64자까지 가능합니다.')
-      .regex(/[A-Z]/, '대문자가 최소 1개 포함되어야 합니다.')
-      .regex(/[a-z]/, '소문자가 최소 1개 포함되어야 합니다.')
-      .regex(/[0-9]/, '숫자가 최소 1개 포함되어야 합니다.')
-      .regex(/[^A-Za-z0-9]/, '특수문자가 최소 1개 포함되어야 합니다.'),
-  });
+  //  문자열 규칙만 담는 스키마
+  passwordRules = z
+    .string()
+    .min(8, '비밀번호는 최소 8자 이상이어야 합니다.')
+    .max(64, '비밀번호는 최대 64자까지 가능합니다.')
+    .regex(/[A-Z]/, '대문자가 최소 1개 포함되어야 합니다.')
+    .regex(/[a-z]/, '소문자가 최소 1개 포함되어야 합니다.')
+    .regex(/[0-9]/, '숫자가 최소 1개 포함되어야 합니다.')
+    .regex(/[^A-Za-z0-9]/, '특수문자가 최소 1개 포함되어야 합니다.');
+
+  //  비번 변경용 스키마 (세 필드)
+  passwordSchema = z
+    .object({
+      currentPassword: z.string().min(1, '현재 비밀번호는 필수입니다.'),
+      newPassword: this.passwordRules, // ← 이제 string
+      newPasswordConfirm: z.string().min(1, '새 비밀번호 확인은 필수입니다.'),
+    })
+    .superRefine((val, ctx) => {
+      if (val.newPassword !== val.newPasswordConfirm) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['newPasswordConfirm'],
+          message: '새 비밀번호가 일치하지 않습니다.',
+        });
+      }
+    });
 
   // ------------------------------
   // ID 검증

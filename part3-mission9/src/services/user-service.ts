@@ -80,7 +80,6 @@ class UserService {
 
   async getUserLikedComments(userId: number) {
     const liked = await userRepository.getUserLikedComments(userId);
-    // liked: [{ comment: {...} }, ...]
 
     return Promise.all(
       liked.map(async (like) => {

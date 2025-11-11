@@ -1,27 +1,36 @@
-export type Awaited<T> = T extends Promise<infer U> ? U : T;
-
-/** ✅ 기존 1-arg 전용: 필요하면 계속 사용 가능 */
 export function asMockFn<TArgs, TReturn>(
   fn: (args: TArgs) => Promise<TReturn>
 ) {
-  return fn as unknown as jest.MockedFunction<
-    (args: TArgs) => Promise<TReturn>
-  >;
+  return fn as jest.MockedFunction<(args: TArgs) => Promise<TReturn>>;
 }
 
-/** ✅ 새 범용 캐스터: 인자 0개/여러 개/옵셔널 모두 커버 */
-export type MockedFn<Fn extends (...args: any[]) => any> =
-  jest.MockedFunction<Fn>;
-export function asMock<Fn extends (...args: any[]) => any>(fn: Fn) {
-  return fn as MockedFn<Fn>;
+/** 공통 함수 시그니처 */
+type FnLike = (...args: unknown[]) => unknown;
+type KnownKeys<T> = {
+  [K in keyof T]: string extends K
+    ? never
+    : number extends K
+    ? never
+    : symbol extends K
+    ? never
+    : K;
+}[keyof T];
+type MethodKeys<T> = {
+  [K in KnownKeys<T>]-?: T[K] extends FnLike ? K : never;
+}[KnownKeys<T>];
+
+/**  새 범용 캐스터: 인자 0개/여러 개/옵셔널 모두 커버 */
+export type MockedFn<Fn extends FnLike> = jest.MockedFunction<Fn>;
+
+export function asMock<Fn extends FnLike>(fn: Fn) {
+  return fn as jest.MockedFunction<Fn>;
 }
 
-/** ✅ spyOn 전용: 객체 메서드의 원본 시그니처를 그대로 유지한 Mock 반환 */
-export function typedSpy<T extends object, K extends keyof T & string>(
+/** spyOn 전용: 원본 메서드 시그니처 유지한 mock/spy 반환 */
+export function typedSpy<T extends object, K extends MethodKeys<Required<T>>>(
   obj: T,
   method: K
-) {
-  return jest.spyOn(obj as any, method) as unknown as MockedFn<
-    Extract<T[K], (...args: any[]) => any>
-  >;
+): jest.SpiedFunction<Extract<Required<T>[K], FnLike>>;
+export function typedSpy(obj: object, method: PropertyKey) {
+  return jest.spyOn(obj as any, method as any) as any;
 }

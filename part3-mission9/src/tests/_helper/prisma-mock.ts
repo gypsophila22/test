@@ -1,7 +1,9 @@
-// src/tests/_helper/prisma-mock.ts
+//#region Imports
 import { jest } from '@jest/globals';
+import bcrypt from 'bcryptjs';
+//#endregion
 
-/* ---------- Records ---------- */
+//#region Records (Types)
 export type UserRecord = {
   id: number;
   username: string;
@@ -40,10 +42,21 @@ export type ArticleLikeRecord = {
   articleId: number;
   userId: number;
 };
+
 export type ProductLikeRecord = {
   id: number;
   productId: number;
   userId: number;
+};
+
+export type CommentRecord = {
+  id: number;
+  content: string;
+  userId: number;
+  articleId?: number | null;
+  productId?: number | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type NotificationRecord = {
@@ -57,8 +70,9 @@ export type NotificationRecord = {
 };
 
 type CommentLikeRecord = { id: number; commentId: number; userId: number };
+//#endregion
 
-/* ---------- Select/Args helpers ---------- */
+//#region Select/Args helpers (Generics)
 type UserSelect = Partial<Record<keyof UserRecord, boolean>>;
 type UserWhereUnique = { id?: number; username?: string; email?: string };
 
@@ -92,12 +106,14 @@ type FindUniqueProductReturn<A extends FindUniqueProductArgs> = A extends {
     ? Pick<ProductRecord, Extract<keyof S, keyof ProductRecord>> | null
     : ProductRecord | null
   : ProductRecord | null;
+//#endregion
 
-/* ---------- DB (in-memory) ---------- */
+//#region In-memory DB & Sequences
 const db: {
   users: UserRecord[];
   articles: ArticleRecord[];
   products: ProductRecord[];
+  comments: CommentRecord[];
   articleLikes: ArticleLikeRecord[];
   productLikes: ProductLikeRecord[];
   commentLikes: CommentLikeRecord[];
@@ -106,6 +122,7 @@ const db: {
   users: [],
   articles: [],
   products: [],
+  comments: [],
   articleLikes: [],
   productLikes: [],
   commentLikes: [],
@@ -116,13 +133,15 @@ let seq = {
   user: 1,
   article: 1,
   product: 1,
+  cmt: 1,
   aLike: 1,
   pLike: 1,
   cLike: 1,
   notif: 1,
 };
+//#endregion
 
-/* ---------- Utils ---------- */
+//#region Utils (helpers)
 function pickUserBy(where: UserWhereUnique): UserRecord | undefined {
   const { id, username, email } = where;
   return db.users.find(
@@ -205,6 +224,52 @@ function matchesArticleWhere(
   });
 }
 
+function matchesProductWhere(
+  p: ProductRecord,
+  where?: {
+    OR?: Array<
+      | { name?: { contains?: string; mode?: 'insensitive' | 'default' } }
+      | {
+          description?: { contains?: string; mode?: 'insensitive' | 'default' };
+        }
+    >;
+  }
+): boolean {
+  if (!where?.OR || where.OR.length === 0) return true;
+  return where.OR.some((cond) => {
+    if ('name' in cond && cond.name?.contains != null) {
+      const q = cond.name.contains!;
+      return cond.name.mode === 'insensitive'
+        ? p.name.toLowerCase().includes(q.toLowerCase())
+        : p.name.includes(q);
+    }
+    if ('description' in cond && cond.description?.contains != null) {
+      const q = cond.description.contains!;
+      return cond.description.mode === 'insensitive'
+        ? p.description.toLowerCase().includes(q.toLowerCase())
+        : p.description.includes(q);
+    }
+    return false;
+  });
+}
+
+function pickArticleLikeKey(where: any): { userId: number; articleId: number } {
+  const a = where?.userId_articleId || where?.articleId_userId;
+  if (!a)
+    throw new Error(
+      'articleLike.where needs userId_articleId or articleId_userId'
+    );
+  return { userId: Number(a.userId), articleId: Number(a.articleId) };
+}
+
+function pickProductLikeKey(where: any): { userId: number; productId: number } {
+  const a = where?.userId_productId || where?.productId_userId;
+  if (!a)
+    throw new Error(
+      'productLike.where needs userId_productId or productId_userId'
+    );
+  return { userId: Number(a.userId), productId: Number(a.productId) };
+}
 /* ---- like matchers ---- */
 type ArticleLikeWhere =
   | { articleId: number; userId?: number }
@@ -268,9 +333,11 @@ function matchCommentLike(
 
   return idOk && userOk;
 }
+//#endregion
 
-/* ---------- Prisma Mock ---------- */
+//#region Prisma Mock Root
 export const prisma = {
+  //#region prisma.user
   user: {
     create: jest.fn(
       async (args: {
@@ -325,7 +392,9 @@ export const prisma = {
       }
     ),
   },
+  //#endregion
 
+  //#region prisma.article
   article: {
     findMany: jest.fn(async (_args?: unknown) =>
       db.articles.map((a) => ensureArticleArrays({ ...a }))
@@ -362,7 +431,7 @@ export const prisma = {
         const rec: ArticleRecord = {
           id: seq.article++,
           title: args.data.title,
-          content: args.data.content,
+          content: args.data.content ?? '',
           userId: args.data.userId,
           tags: Array.isArray(args.data.tags) ? args.data.tags : [],
           images: Array.isArray(args.data.images) ? args.data.images : [],
@@ -406,13 +475,28 @@ export const prisma = {
       return { ...removed };
     }),
 
-    deleteMany: jest.fn(async () => ({ count: 1 })),
+    deleteMany: jest.fn(async (args?: { where?: { id?: number } }) => {
+      const before = db.articles.length;
+      if (!args?.where || args.where.id == null) {
+        db.articles = [];
+      } else {
+        const id = args.where.id;
+        db.articles = db.articles.filter((a) => a.id !== id);
+      }
+      const after = db.articles.length;
+      return { count: before - after };
+    }),
   },
+  //#endregion
 
+  //#region prisma.product
   product: {
-    findMany: jest.fn(async (_args?: unknown) =>
-      db.products.map((p) => ensureProductArrays({ ...p }))
-    ),
+    findMany: jest.fn(async (args?: { where?: any }) => {
+      const list = db.products.filter((p) =>
+        matchesProductWhere(p, args?.where)
+      );
+      return list.map((p) => ensureProductArrays({ ...p }));
+    }),
 
     findUnique: jest.fn(
       async <A extends FindUniqueProductArgs>(
@@ -440,7 +524,27 @@ export const prisma = {
       }
     ),
 
-    count: jest.fn(async (_args?: { where?: unknown }) => db.products.length),
+    count: jest.fn(
+      async (args?: {
+        where?: {
+          OR?: Array<
+            | {
+                name?: {
+                  contains?: string;
+                  mode?: 'insensitive' | 'default';
+                };
+              }
+            | {
+                description?: {
+                  contains?: string;
+                  mode?: 'insensitive' | 'default';
+                };
+              }
+          >;
+        };
+      }) =>
+        db.products.filter((p) => matchesProductWhere(p, args?.where)).length
+    ),
 
     create: jest.fn(
       async (args: {
@@ -495,10 +599,175 @@ export const prisma = {
       return { ...removed };
     }),
 
-    deleteMany: jest.fn(async () => ({ count: 1 })),
+    deleteMany: jest.fn(async (args?: { where?: { id?: number } }) => {
+      const before = db.products.length;
+      if (!args?.where || args.where.id == null) {
+        db.products = [];
+      } else {
+        const id = args.where.id;
+        db.products = db.products.filter((p) => p.id !== id);
+      }
+      const after = db.products.length;
+      return { count: before - after };
+    }),
   },
+  //#endregion
 
+  //#region prisma.comment
+  comment: {
+    findUnique: jest.fn(async (args: { where: { id: number } }) => {
+      const f = db.comments.find((c) => c.id === args.where.id);
+      return f ? { ...f } : null;
+    }),
+
+    findMany: jest.fn(
+      async (args?: {
+        where?: {
+          id?: number | { in?: number[] };
+          articleId?: number | null;
+          productId?: number | null;
+          userId?: number;
+        };
+        orderBy?: { createdAt?: 'asc' | 'desc' };
+        skip?: number;
+        take?: number;
+      }) => {
+        let list = db.comments.slice();
+
+        // ✅ id/in 필터 추가
+        if (args?.where?.id !== undefined) {
+          const idCond = args.where.id as any;
+          if (typeof idCond === 'number') {
+            list = list.filter((c) => c.id === idCond);
+          } else if (idCond && Array.isArray(idCond.in)) {
+            list = list.filter((c) => idCond.in.includes(c.id));
+          }
+        }
+
+        if (args?.where?.articleId !== undefined) {
+          list = list.filter((c) => c.articleId === args.where!.articleId);
+        }
+        if (args?.where?.productId !== undefined) {
+          list = list.filter((c) => c.productId === args.where!.productId);
+        }
+        if (args?.where?.userId !== undefined) {
+          list = list.filter((c) => c.userId === args.where!.userId);
+        }
+
+        if (args?.orderBy?.createdAt) {
+          const dir = args.orderBy.createdAt === 'asc' ? 1 : -1;
+          list.sort(
+            (a, b) => (a.createdAt.getTime() - b.createdAt.getTime()) * dir
+          );
+        }
+
+        const start = args?.skip ?? 0;
+        const end = args?.take != null ? start + args.take : undefined;
+        return list.slice(start, end).map((c) => ({ ...c }));
+      }
+    ),
+
+    create: jest.fn(
+      async (args: {
+        data: Omit<CommentRecord, 'id' | 'createdAt' | 'updatedAt'> &
+          Partial<Pick<CommentRecord, 'id'>>;
+      }) => {
+        // XOR 검사
+        const hasArticle = typeof args.data.articleId === 'number';
+        const hasProduct = typeof args.data.productId === 'number';
+        if (hasArticle === hasProduct) {
+          const e: any = new Error(
+            'Exactly one of articleId/productId required'
+          );
+          e.code = 'VALIDATION';
+          throw e;
+        }
+
+        const now = new Date();
+        const rec: CommentRecord = {
+          id: args.data.id ?? seq.cmt++,
+          content: args.data.content ?? '',
+          userId: args.data.userId,
+          articleId: hasArticle ? args.data.articleId! : null,
+          productId: hasProduct ? args.data.productId! : null,
+          createdAt: now,
+          updatedAt: now,
+        };
+        db.comments.push(rec);
+        return { ...rec };
+      }
+    ),
+
+    update: jest.fn(
+      async (args: {
+        where: { id: number };
+        data: Partial<Omit<CommentRecord, 'id'>>;
+      }) => {
+        const t = db.comments.find((c) => c.id === args.where.id);
+        if (!t) {
+          const e: any = new Error('Not found');
+          e.code = 'P2025';
+          throw e;
+        }
+        Object.assign(t, { ...args.data, updatedAt: new Date() });
+        return { ...t };
+      }
+    ),
+
+    delete: jest.fn(async (args: { where: { id: number } }) => {
+      const idx = db.comments.findIndex((c) => c.id === args.where.id);
+      if (idx < 0) {
+        const e: any = new Error('Not found');
+        e.code = 'P2025';
+        throw e;
+      }
+      const [removed] = db.comments.splice(idx, 1);
+      return { ...removed };
+    }),
+  },
+  //#endregion
+
+  //#region prisma.articleLike
   articleLike: {
+    findUnique: jest.fn(async ({ where }: any) => {
+      const { userId, articleId } = pickArticleLikeKey(where);
+      return (
+        db.articleLikes.find(
+          (l) => l.userId === userId && l.articleId === articleId
+        ) ?? null
+      );
+    }),
+
+    create: jest.fn(async ({ data }: any) => {
+      const userId = Number(data.userId);
+      const articleId = Number(data.articleId);
+      const exists = db.articleLikes.some(
+        (l) => l.userId === userId && l.articleId === articleId
+      );
+      if (exists) {
+        const e: any = new Error('Unique constraint failed');
+        e.code = 'P2002';
+        throw e;
+      }
+      const row: ArticleLikeRecord = { id: seq.aLike++, userId, articleId };
+      db.articleLikes.push(row);
+      return { ...row };
+    }),
+
+    delete: jest.fn(async ({ where }: any) => {
+      const { userId, articleId } = pickArticleLikeKey(where);
+      const idx = db.articleLikes.findIndex(
+        (l) => l.userId === userId && l.articleId === articleId
+      );
+      if (idx < 0) {
+        const e: any = new Error('Not found');
+        e.code = 'P2025';
+        throw e;
+      }
+      const [removed] = db.articleLikes.splice(idx, 1);
+      return { ...removed };
+    }),
+
     count: jest.fn(
       async (args: { where: ArticleLikeWhere }) =>
         db.articleLikes.filter((l) => matchArticleLike(args.where, l)).length
@@ -520,8 +789,49 @@ export const prisma = {
       }
     ),
   },
+  //#endregion
 
+  //#region prisma.productLike
   productLike: {
+    findUnique: jest.fn(async ({ where }: any) => {
+      const { userId, productId } = pickProductLikeKey(where);
+      return (
+        db.productLikes.find(
+          (l) => l.userId === userId && l.productId === productId
+        ) ?? null
+      );
+    }),
+
+    create: jest.fn(async ({ data }: any) => {
+      const userId = Number(data.userId);
+      const productId = Number(data.productId);
+      const exists = db.productLikes.some(
+        (l) => l.userId === userId && l.productId === productId
+      );
+      if (exists) {
+        const e: any = new Error('Unique constraint failed');
+        e.code = 'P2002';
+        throw e;
+      }
+      const row: ProductLikeRecord = { id: seq.pLike++, userId, productId };
+      db.productLikes.push(row);
+      return { ...row };
+    }),
+
+    delete: jest.fn(async ({ where }: any) => {
+      const { userId, productId } = pickProductLikeKey(where);
+      const idx = db.productLikes.findIndex(
+        (l) => l.userId === userId && l.productId === productId
+      );
+      if (idx < 0) {
+        const e: any = new Error('Not found');
+        e.code = 'P2025';
+        throw e;
+      }
+      const [removed] = db.productLikes.splice(idx, 1);
+      return { ...removed };
+    }),
+
     count: jest.fn(
       async (args: { where: ProductLikeWhere }) =>
         db.productLikes.filter((l) => matchProductLike(args.where, l)).length
@@ -543,12 +853,164 @@ export const prisma = {
       }
     ),
   },
+  //#endregion
 
+  //#region prisma.commentLike
   commentLike: {
+    findUnique: jest.fn(
+      async ({
+        where: {
+          userId_commentId: { userId, commentId },
+        },
+      }) => {
+        return (
+          db.commentLikes.find(
+            (l) => l.userId === userId && l.commentId === commentId
+          ) ?? null
+        );
+      }
+    ),
+
+    findMany: jest.fn(async (args?: any) => {
+      let list = db.commentLikes.slice();
+
+      if (args?.where) {
+        const w = args.where as {
+          userId?: number;
+          commentId?: number | { in?: number[] };
+        };
+
+        const hasCommentIdCond =
+          typeof w.commentId === 'number' ||
+          (w.commentId && Array.isArray((w.commentId as any).in));
+
+        if (hasCommentIdCond) {
+          list = list.filter((rec) => matchCommentLike(w as any, rec));
+        }
+
+        if (typeof w.userId === 'number') {
+          list = list.filter((rec) => rec.userId === w.userId);
+        }
+      }
+
+      if (args?.orderBy?.id) {
+        const dir = args.orderBy.id === 'asc' ? 1 : -1;
+        list.sort((a, b) => (a.id - b.id) * dir);
+      }
+      const start = args?.skip ?? 0;
+      const end = args?.take != null ? start + args.take : undefined;
+      const sliced = list.slice(start, end);
+
+      const commentArg = args?.include?.comment;
+      const wantComment = !!commentArg;
+      const isSelect = typeof commentArg === 'object' && !!commentArg.select;
+      const sel = isSelect ? commentArg.select : undefined;
+
+      const pick = (obj: any, keysObj: Record<string, boolean> | undefined) => {
+        if (!obj) return null;
+        if (!keysObj) return { ...obj };
+        const out: any = {};
+        for (const k of Object.keys(keysObj)) {
+          if ((keysObj as any)[k]) out[k] = obj[k];
+        }
+        return out;
+      };
+
+      const wantArticle =
+        !isSelect &&
+        typeof commentArg === 'object' &&
+        !!commentArg?.include?.article;
+      const wantProduct =
+        !isSelect &&
+        typeof commentArg === 'object' &&
+        !!commentArg?.include?.product;
+
+      const result = sliced.map((like) => {
+        if (!wantComment) return { ...like };
+
+        const c = db.comments.find((x) => x.id === like.commentId) || null;
+        if (!c) return { ...like, comment: null };
+
+        if (isSelect) {
+          const comment: any = pick(c, sel);
+
+          if (sel?.article) {
+            const art =
+              c.articleId != null
+                ? db.articles.find((a) => a.id === c.articleId) || null
+                : null;
+            comment.article = sel.article.select
+              ? pick(art, sel.article.select)
+              : art;
+          }
+          if (sel?.product) {
+            const prod =
+              c.productId != null
+                ? db.products.find((p) => p.id === c.productId) || null
+                : null;
+            comment.product = sel.product.select
+              ? pick(prod, sel.product.select)
+              : prod;
+          }
+          return { ...like, comment };
+        }
+
+        const comment: any = { ...c };
+        if (wantArticle) {
+          comment.article =
+            c.articleId != null
+              ? db.articles.find((a) => a.id === c.articleId) || null
+              : null;
+        }
+        if (wantProduct) {
+          comment.product =
+            c.productId != null
+              ? db.products.find((p) => p.id === c.productId) || null
+              : null;
+        }
+        return { ...like, comment };
+      });
+      return result;
+    }),
+
+    create: jest.fn(async ({ data: { userId, commentId } }) => {
+      const exists = db.commentLikes.some(
+        (l) => l.userId === userId && l.commentId === commentId
+      );
+      if (exists) {
+        const e: any = new Error('Unique constraint failed');
+        e.code = 'P2002';
+        throw e;
+      }
+      const row = { id: seq.cLike++, userId, commentId };
+      db.commentLikes.push(row);
+      return row;
+    }),
+
+    delete: jest.fn(
+      async ({
+        where: {
+          userId_commentId: { userId, commentId },
+        },
+      }) => {
+        const idx = db.commentLikes.findIndex(
+          (l) => l.userId === userId && l.commentId === commentId
+        );
+        if (idx < 0) {
+          const e: any = new Error('Not found');
+          e.code = 'P2025';
+          throw e;
+        }
+        const [removed] = db.commentLikes.splice(idx, 1);
+        return removed;
+      }
+    ),
+
     count: jest.fn(
       async (args: { where: CommentLikeWhere }) =>
         db.commentLikes.filter((l) => matchCommentLike(args.where, l)).length
     ),
+
     groupBy: jest.fn(
       async (args: {
         by?: string[];
@@ -566,7 +1028,9 @@ export const prisma = {
       }
     ),
   },
+  //#endregion
 
+  //#region prisma.notification
   notification: {
     findMany: jest.fn(
       async (args?: {
@@ -672,15 +1136,26 @@ export const prisma = {
       return n ? { ...n } : null;
     }),
   },
+  //#endregion
 };
+//#endregion
+
+//#region Prisma Mock: $transaction & default export
+(prisma as any).$transaction = jest.fn(async (arg: any) => {
+  if (Array.isArray(arg)) return Promise.all(arg);
+  if (typeof arg === 'function') return arg(prisma);
+  return arg;
+});
 
 export default prisma;
+//#endregion
 
-/* ---------- test helpers ---------- */
+//#region Test Helpers (reset & seeders)
 export function prismaReset(): void {
   db.users = [];
   db.articles = [];
   db.products = [];
+  db.comments = [];
   db.articleLikes = [];
   db.productLikes = [];
   db.commentLikes = [];
@@ -688,6 +1163,7 @@ export function prismaReset(): void {
     user: 1,
     article: 1,
     product: 1,
+    cmt: 1,
     aLike: 1,
     pLike: 1,
     cLike: 1,
@@ -714,6 +1190,14 @@ export function prismaReset(): void {
   prisma.product.delete.mockClear();
   prisma.product.deleteMany.mockClear();
 
+  prisma.comment.findMany.mockClear();
+  prisma.comment.findUnique.mockClear();
+  // prisma.comment.count.mockClear();
+  prisma.comment.create.mockClear();
+  prisma.comment.update.mockClear();
+  prisma.comment.delete.mockClear();
+  // prisma.comment.deleteMany.mockClear();
+
   prisma.articleLike.count.mockClear();
   prisma.articleLike.groupBy.mockClear();
   prisma.productLike.count.mockClear();
@@ -727,6 +1211,51 @@ export function prismaReset(): void {
   prisma.notification.update.mockClear();
   prisma.notification.create.mockClear();
   prisma.notification.findUnique.mockClear();
+
+  (prisma as any).$transaction?.mockClear?.();
+}
+
+export function seedUsers(
+  list: Array<
+    Pick<UserRecord, 'id' | 'username' | 'email' | 'password'> &
+      Partial<Pick<UserRecord, 'images' | 'createdAt' | 'updatedAt'>>
+  >
+): void {
+  for (const u of list) {
+    db.users.push({
+      id: u.id,
+      username: u.username,
+      email: u.email,
+      // ⚠️ 이 함수는 "이미 해시된 비밀번호"를 넣는다고 가정
+      password: u.password,
+      images: u.images ?? [],
+      createdAt: u.createdAt ?? new Date(),
+      updatedAt: u.updatedAt ?? new Date(),
+    });
+  }
+}
+
+export async function seedUsersWithHash(
+  list: Array<
+    Pick<UserRecord, 'id' | 'username' | 'email' | 'password'> &
+      Partial<Pick<UserRecord, 'images' | 'createdAt' | 'updatedAt'>>
+  >,
+  opts: { saltRounds?: number } = {}
+): Promise<void> {
+  const saltRounds = opts.saltRounds ?? 10;
+
+  for (const u of list) {
+    const hashed = await bcrypt.hash(u.password, saltRounds);
+    db.users.push({
+      id: u.id,
+      username: u.username,
+      email: u.email,
+      password: hashed,
+      images: u.images ?? [],
+      createdAt: u.createdAt ?? new Date(),
+      updatedAt: u.updatedAt ?? new Date(),
+    });
+  }
 }
 
 export function seedArticles(
@@ -769,6 +1298,41 @@ export function seedProducts(
   }
 }
 
+export function seedComments(
+  list: Array<
+    Pick<CommentRecord, 'id' | 'userId' | 'content'> &
+      (
+        | { articleId: number; productId?: undefined }
+        | { productId: number; articleId?: undefined }
+      ) &
+      Partial<Pick<CommentRecord, 'createdAt' | 'updatedAt'>>
+  >
+): CommentRecord[] {
+  const out: CommentRecord[] = [];
+  for (const c of list) {
+    // XOR 보장: articleId 또는 productId 중 정확히 하나
+    const hasArticle = typeof (c as any).articleId === 'number';
+    const hasProduct = typeof (c as any).productId === 'number';
+    if (hasArticle === hasProduct) {
+      throw new Error(
+        'seedComments: require exactly one of articleId or productId'
+      );
+    }
+    const rec: CommentRecord = {
+      id: c.id,
+      content: c.content,
+      userId: c.userId,
+      articleId: (c as any).articleId ?? null,
+      productId: (c as any).productId ?? null,
+      createdAt: c.createdAt ?? new Date(),
+      updatedAt: c.updatedAt ?? new Date(),
+    };
+    db.comments.push(rec);
+    out.push(rec);
+  }
+  return out;
+}
+
 export function seedArticleLikes(
   pairs: ReadonlyArray<Pick<ArticleLikeRecord, 'articleId' | 'userId'>>
 ): void {
@@ -806,3 +1370,4 @@ export function seedNotifications(
     });
   }
 }
+//#endregion

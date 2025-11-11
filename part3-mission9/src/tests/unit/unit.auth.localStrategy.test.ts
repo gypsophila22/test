@@ -2,8 +2,8 @@
 import bcrypt from 'bcrypt';
 import request from 'supertest';
 
-import { prisma } from '../lib/prismaClient.js';
-import { createPassportTestApp } from './_helper/test-passport-app.js';
+import { prisma } from '../../lib/prismaClient.js';
+import { createPassportTestApp } from '../_helper/test-passport-app.js';
 
 describe('passport-local (비밀번호 검증)', () => {
   const app = createPassportTestApp();

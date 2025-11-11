@@ -5,10 +5,7 @@ module.exports = {
   ...base,
   rootDir: __dirname,
   displayName: 'unit',
-  testMatch: [
-    '**/src/tests/unit.**/*.test.ts',
-    '**/src/tests/**/*.unit.test.ts',
-  ],
+  testMatch: ['**/src/tests/unit/**/*.test.ts'],
   moduleNameMapper: {
     // 1) token 모듈: 상대경로/alias 모두 커버 (맨 위!)
     '^@/lib/token(?:\\.(?:js|ts))?$':

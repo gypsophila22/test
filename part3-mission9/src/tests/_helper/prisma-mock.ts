@@ -29,8 +29,8 @@ export type ProductRecord = {
   id: number;
   name: string;
   description: string;
-  price: number; // ✅ 추가
-  userId: number; // ✅ 추가
+  price: number;
+  userId: number;
   tags: string[];
   images: string[];
   createdAt: Date;
@@ -62,7 +62,7 @@ export type CommentRecord = {
 export type NotificationRecord = {
   id: number;
   userId: number;
-  type: 'COMMENT' | 'LIKE' | 'SYSTEM' | string; // 프로젝트에 맞게 열거형 쓰세요
+  type: 'COMMENT' | 'LIKE' | 'SYSTEM' | string;
   message: string;
   isRead: boolean;
   createdAt: Date;
@@ -70,10 +70,10 @@ export type NotificationRecord = {
 };
 
 type CommentLikeRecord = { id: number; commentId: number; userId: number };
-//#endregion
 
-//#region Select/Args helpers (Generics)
-type UserSelect = Partial<Record<keyof UserRecord, boolean>>;
+type BooleanSelect<T> = Partial<Record<keyof T, boolean>>;
+
+type UserSelect = BooleanSelect<UserRecord>;
 type UserWhereUnique = { id?: number; username?: string; email?: string };
 
 type FindUniqueUserArgs =
@@ -91,7 +91,7 @@ type FindUniqueUserReturn<A extends FindUniqueUserArgs> = A extends {
     : UserRecord | null
   : UserRecord | null;
 
-type ProductSelect = Partial<Record<keyof ProductRecord, boolean>>;
+type ProductSelect = BooleanSelect<ProductRecord>;
 type FindUniqueProductArgs =
   | { where: { id: number }; select?: undefined }
   | {
@@ -192,17 +192,20 @@ function isNumArray(x: unknown): x is number[] {
   );
 }
 
-function wantsCount(v: unknown, key: string) {
-  const obj = v as any;
-  return !!(obj && (obj._all || obj[key]));
+function wantsCount(v: unknown, key: string): boolean {
+  if (typeof v !== 'object' || v === null) return false;
+  const obj = v as Record<string, unknown>;
+  return obj._all === true || obj[key] === true;
 }
+
+type InsensitiveMode = 'insensitive' | 'default';
 
 function matchesArticleWhere(
   a: ArticleRecord,
   where?: {
     OR?: Array<
-      | { title?: { contains?: string; mode?: 'insensitive' | 'default' } }
-      | { content?: { contains?: string; mode?: 'insensitive' | 'default' } }
+      | { title?: { contains?: string; mode?: InsensitiveMode } }
+      | { content?: { contains?: string; mode?: InsensitiveMode } }
     >;
   }
 ): boolean {
@@ -228,10 +231,8 @@ function matchesProductWhere(
   p: ProductRecord,
   where?: {
     OR?: Array<
-      | { name?: { contains?: string; mode?: 'insensitive' | 'default' } }
-      | {
-          description?: { contains?: string; mode?: 'insensitive' | 'default' };
-        }
+      | { name?: { contains?: string; mode?: InsensitiveMode } }
+      | { description?: { contains?: string; mode?: InsensitiveMode } }
     >;
   }
 ): boolean {
@@ -253,8 +254,22 @@ function matchesProductWhere(
   });
 }
 
-function pickArticleLikeKey(where: any): { userId: number; articleId: number } {
-  const a = where?.userId_articleId || where?.articleId_userId;
+/** 키쌍(where: userId_articleId | articleId_userId) 타입 생성기 */
+type PairKey<T1 extends string, T2 extends string> =
+  | { [K in `${T1}_${T2}`]: { [P in T1 | T2]: number } }[`${T1}_${T2}`]
+  | { [K in `${T2}_${T1}`]: { [P in T1 | T2]: number } }[`${T2}_${T1}`];
+
+function pickArticleLikeKey(where: PairKey<'userId', 'articleId'>): {
+  userId: number;
+  articleId: number;
+} {
+  const a =
+    (where as unknown as Record<string, { userId: number; articleId: number }>)[
+      'userId_articleId'
+    ] ??
+    (where as unknown as Record<string, { userId: number; articleId: number }>)[
+      'articleId_userId'
+    ];
   if (!a)
     throw new Error(
       'articleLike.where needs userId_articleId or articleId_userId'
@@ -262,14 +277,24 @@ function pickArticleLikeKey(where: any): { userId: number; articleId: number } {
   return { userId: Number(a.userId), articleId: Number(a.articleId) };
 }
 
-function pickProductLikeKey(where: any): { userId: number; productId: number } {
-  const a = where?.userId_productId || where?.productId_userId;
+function pickProductLikeKey(where: PairKey<'userId', 'productId'>): {
+  userId: number;
+  productId: number;
+} {
+  const a =
+    (where as unknown as Record<string, { userId: number; productId: number }>)[
+      'userId_productId'
+    ] ??
+    (where as unknown as Record<string, { userId: number; productId: number }>)[
+      'productId_userId'
+    ];
   if (!a)
     throw new Error(
       'productLike.where needs userId_productId or productId_userId'
     );
   return { userId: Number(a.userId), productId: Number(a.productId) };
 }
+
 /* ---- like matchers ---- */
 type ArticleLikeWhere =
   | { articleId: number; userId?: number }
@@ -286,10 +311,9 @@ function matchArticleLike(
   rec: ArticleLikeRecord
 ): boolean {
   const idOk =
-    typeof (where as any).articleId === 'number'
+    typeof (where as { articleId: number }).articleId === 'number'
       ? rec.articleId === (where as { articleId: number }).articleId
-      : isNumArray((where as { articleId: { in?: number[] } }).articleId?.in) &&
-        (where as { articleId: { in: number[] } }).articleId.in.includes(
+      : (where as { articleId: { in: number[] } }).articleId.in.includes(
           rec.articleId
         );
   const userOk =
@@ -303,10 +327,9 @@ function matchProductLike(
   rec: ProductLikeRecord
 ): boolean {
   const idOk =
-    typeof (where as any).productId === 'number'
+    typeof (where as { productId: number }).productId === 'number'
       ? rec.productId === (where as { productId: number }).productId
-      : isNumArray((where as { productId: { in?: number[] } }).productId?.in) &&
-        (where as { productId: { in: number[] } }).productId.in.includes(
+      : (where as { productId: { in: number[] } }).productId.in.includes(
           rec.productId
         );
   const userOk =
@@ -320,10 +343,9 @@ function matchCommentLike(
   rec: CommentLikeRecord
 ): boolean {
   const idOk =
-    typeof (where as any).commentId === 'number'
+    typeof (where as { commentId: number }).commentId === 'number'
       ? rec.commentId === (where as { commentId: number }).commentId
-      : isNumArray((where as { commentId: { in?: number[] } }).commentId?.in) &&
-        (where as { commentId: { in: number[] } }).commentId.in.includes(
+      : (where as { commentId: { in: number[] } }).commentId.in.includes(
           rec.commentId
         );
 
@@ -333,6 +355,67 @@ function matchCommentLike(
 
   return idOk && userOk;
 }
+//#endregion
+
+//#region Query arg helper types
+type OrderDir = 'asc' | 'desc';
+
+type ProductWhereOr = {
+  OR?: Array<
+    | { name?: { contains?: string; mode?: InsensitiveMode } }
+    | { description?: { contains?: string; mode?: InsensitiveMode } }
+  >;
+};
+type FindManyProductArgs = { where?: ProductWhereOr };
+
+type CommentLikeOrderBy = { id?: OrderDir };
+
+type CommentIncludeArticle =
+  | boolean
+  | { select?: Partial<Record<keyof ArticleRecord, boolean>> };
+type CommentIncludeProduct =
+  | boolean
+  | { select?: Partial<Record<keyof ProductRecord, boolean>> };
+
+type CommentInclude =
+  | boolean
+  | {
+      select?: Partial<Record<keyof CommentRecord, boolean>> & {
+        article?: CommentIncludeArticle;
+        product?: CommentIncludeProduct;
+      };
+      include?: {
+        article?: CommentIncludeArticle;
+        product?: CommentIncludeProduct;
+      };
+    };
+
+type FindManyCommentLikeArgs = {
+  where?: {
+    userId?: number;
+    commentId?: number | { in?: number[] };
+  };
+  orderBy?: CommentLikeOrderBy;
+  skip?: number;
+  take?: number;
+  include?: { comment?: CommentInclude };
+};
+
+type GroupByCountOpt<K extends string> = {
+  _count?: { _all?: true } & Partial<Record<K, true>>;
+};
+type ArticleLikeGroupByArgs = {
+  by?: string[];
+  where?: { articleId?: { in?: number[] } };
+} & GroupByCountOpt<'articleId'>;
+type ProductLikeGroupByArgs = {
+  by?: string[];
+  where?: { productId?: { in?: number[] } };
+} & GroupByCountOpt<'productId'>;
+type CommentLikeGroupByArgs = {
+  by?: string[];
+  where?: { commentId?: { in?: number[] } };
+} & GroupByCountOpt<'commentId'>;
 //#endregion
 
 //#region Prisma Mock Root
@@ -367,11 +450,13 @@ export const prisma = {
           return { ...found } as FindUniqueUserReturn<A>;
 
         const sel = args.select as UserSelect;
-        const picked = Object.fromEntries(
-          Object.keys(sel)
-            .filter((k) => sel[k as keyof UserSelect])
-            .map((k) => [k, found[k as keyof UserRecord]])
-        ) as Pick<UserRecord, Extract<keyof typeof sel, keyof UserRecord>>;
+        const pickedEntries = Object.keys(sel)
+          .filter((k) => sel[k as keyof UserSelect])
+          .map((k) => [k, found[k as keyof UserRecord]] as const);
+        const picked = Object.fromEntries(pickedEntries) as Pick<
+          UserRecord,
+          Extract<keyof typeof sel, keyof UserRecord>
+        >;
         return picked as FindUniqueUserReturn<A>;
       }
     ),
@@ -396,8 +481,49 @@ export const prisma = {
 
   //#region prisma.article
   article: {
-    findMany: jest.fn(async (_args?: unknown) =>
-      db.articles.map((a) => ensureArticleArrays({ ...a }))
+    findMany: jest.fn(
+      async (args?: {
+        where?: {
+          OR?: Array<
+            | {
+                title?: { contains?: string; mode?: 'insensitive' | 'default' };
+              }
+            | {
+                content?: {
+                  contains?: string;
+                  mode?: 'insensitive' | 'default';
+                };
+              }
+          >;
+        };
+        orderBy?: { createdAt?: 'asc' | 'desc'; id?: 'asc' | 'desc' };
+        skip?: number;
+        take?: number;
+      }) => {
+        let list = db.articles.filter((a) =>
+          matchesArticleWhere(a, args?.where)
+        );
+        if (args?.orderBy?.createdAt || args?.orderBy?.id) {
+          const dirCreated = args?.orderBy?.createdAt === 'asc' ? 1 : -1;
+          const dirId = args?.orderBy?.id === 'asc' ? 1 : -1;
+          list.sort((a, b) => {
+            if (args?.orderBy?.createdAt) {
+              const diff =
+                (a.createdAt.getTime() - b.createdAt.getTime()) * dirCreated;
+              if (diff !== 0) return diff;
+            }
+            if (args?.orderBy?.id) {
+              return (a.id - b.id) * dirId;
+            }
+            return 0;
+          });
+        }
+        const start = args?.skip ?? 0;
+        const end = args?.take != null ? start + args.take : undefined;
+        const sliced = list.slice(start, end);
+
+        return sliced.map((a) => ensureArticleArrays({ ...a }));
+      }
     ),
 
     findUnique: jest.fn(async (args: { where: { id: number } }) => {
@@ -410,12 +536,12 @@ export const prisma = {
         where?: {
           OR?: Array<
             | {
-                title?: { contains?: string; mode?: 'insensitive' | 'default' };
+                title?: { contains?: string; mode?: InsensitiveMode };
               }
             | {
                 content?: {
                   contains?: string;
-                  mode?: 'insensitive' | 'default';
+                  mode?: InsensitiveMode;
                 };
               }
           >;
@@ -491,7 +617,7 @@ export const prisma = {
 
   //#region prisma.product
   product: {
-    findMany: jest.fn(async (args?: { where?: any }) => {
+    findMany: jest.fn(async (args?: FindManyProductArgs) => {
       const list = db.products.filter((p) =>
         matchesProductWhere(p, args?.where)
       );
@@ -512,11 +638,16 @@ export const prisma = {
         }
 
         const sel = args.select as ProductSelect;
-        const picked = Object.fromEntries(
-          Object.keys(sel)
-            .filter((k) => sel[k as keyof ProductSelect])
-            .map((k) => [k, (f as Record<string, unknown>)[k]])
-        ) as Pick<
+        const pickedEntries = Object.keys(sel)
+          .filter((k) => sel[k as keyof ProductSelect])
+          .map(
+            (k) =>
+              [k, f[k as keyof ProductRecord]] as [
+                keyof ProductRecord | string,
+                unknown
+              ]
+          );
+        const picked = Object.fromEntries(pickedEntries) as Pick<
           ProductRecord,
           Extract<keyof typeof sel, keyof ProductRecord>
         >;
@@ -531,13 +662,13 @@ export const prisma = {
             | {
                 name?: {
                   contains?: string;
-                  mode?: 'insensitive' | 'default';
+                  mode?: InsensitiveMode;
                 };
               }
             | {
                 description?: {
                   contains?: string;
-                  mode?: 'insensitive' | 'default';
+                  mode?: InsensitiveMode;
                 };
               }
           >;
@@ -628,19 +759,18 @@ export const prisma = {
           productId?: number | null;
           userId?: number;
         };
-        orderBy?: { createdAt?: 'asc' | 'desc' };
+        orderBy?: { createdAt?: OrderDir };
         skip?: number;
         take?: number;
       }) => {
         let list = db.comments.slice();
 
-        // ✅ id/in 필터 추가
         if (args?.where?.id !== undefined) {
-          const idCond = args.where.id as any;
+          const idCond = args.where.id as number | { in?: number[] };
           if (typeof idCond === 'number') {
             list = list.filter((c) => c.id === idCond);
           } else if (idCond && Array.isArray(idCond.in)) {
-            list = list.filter((c) => idCond.in.includes(c.id));
+            list = list.filter((c) => idCond.in!.includes(c.id));
           }
         }
 
@@ -672,13 +802,12 @@ export const prisma = {
         data: Omit<CommentRecord, 'id' | 'createdAt' | 'updatedAt'> &
           Partial<Pick<CommentRecord, 'id'>>;
       }) => {
-        // XOR 검사
         const hasArticle = typeof args.data.articleId === 'number';
         const hasProduct = typeof args.data.productId === 'number';
         if (hasArticle === hasProduct) {
-          const e: any = new Error(
+          const e = new Error(
             'Exactly one of articleId/productId required'
-          );
+          ) as Error & { code: string };
           e.code = 'VALIDATION';
           throw e;
         }
@@ -705,7 +834,7 @@ export const prisma = {
       }) => {
         const t = db.comments.find((c) => c.id === args.where.id);
         if (!t) {
-          const e: any = new Error('Not found');
+          const e = new Error('Not found') as Error & { code: string };
           e.code = 'P2025';
           throw e;
         }
@@ -717,7 +846,7 @@ export const prisma = {
     delete: jest.fn(async (args: { where: { id: number } }) => {
       const idx = db.comments.findIndex((c) => c.id === args.where.id);
       if (idx < 0) {
-        const e: any = new Error('Not found');
+        const e = new Error('Not found') as Error & { code: string };
         e.code = 'P2025';
         throw e;
       }
@@ -729,140 +858,145 @@ export const prisma = {
 
   //#region prisma.articleLike
   articleLike: {
-    findUnique: jest.fn(async ({ where }: any) => {
-      const { userId, articleId } = pickArticleLikeKey(where);
-      return (
-        db.articleLikes.find(
+    findUnique: jest.fn(
+      async ({ where }: { where: PairKey<'userId', 'articleId'> }) => {
+        const { userId, articleId } = pickArticleLikeKey(where);
+        return (
+          db.articleLikes.find(
+            (l) => l.userId === userId && l.articleId === articleId
+          ) ?? null
+        );
+      }
+    ),
+
+    create: jest.fn(
+      async ({ data }: { data: { userId: number; articleId: number } }) => {
+        const userId = Number(data.userId);
+        const articleId = Number(data.articleId);
+        const exists = db.articleLikes.some(
           (l) => l.userId === userId && l.articleId === articleId
-        ) ?? null
-      );
-    }),
-
-    create: jest.fn(async ({ data }: any) => {
-      const userId = Number(data.userId);
-      const articleId = Number(data.articleId);
-      const exists = db.articleLikes.some(
-        (l) => l.userId === userId && l.articleId === articleId
-      );
-      if (exists) {
-        const e: any = new Error('Unique constraint failed');
-        e.code = 'P2002';
-        throw e;
+        );
+        if (exists) {
+          const e = new Error('Unique constraint failed') as Error & {
+            code: string;
+          };
+          e.code = 'P2002';
+          throw e;
+        }
+        const row: ArticleLikeRecord = { id: seq.aLike++, userId, articleId };
+        db.articleLikes.push(row);
+        return { ...row };
       }
-      const row: ArticleLikeRecord = { id: seq.aLike++, userId, articleId };
-      db.articleLikes.push(row);
-      return { ...row };
-    }),
+    ),
 
-    delete: jest.fn(async ({ where }: any) => {
-      const { userId, articleId } = pickArticleLikeKey(where);
-      const idx = db.articleLikes.findIndex(
-        (l) => l.userId === userId && l.articleId === articleId
-      );
-      if (idx < 0) {
-        const e: any = new Error('Not found');
-        e.code = 'P2025';
-        throw e;
+    delete: jest.fn(
+      async ({ where }: { where: PairKey<'userId', 'articleId'> }) => {
+        const { userId, articleId } = pickArticleLikeKey(where);
+        const idx = db.articleLikes.findIndex(
+          (l) => l.userId === userId && l.articleId === articleId
+        );
+        if (idx < 0) {
+          const e = new Error('Not found') as Error & { code: string };
+          e.code = 'P2025';
+          throw e;
+        }
+        const [removed] = db.articleLikes.splice(idx, 1);
+        return { ...removed };
       }
-      const [removed] = db.articleLikes.splice(idx, 1);
-      return { ...removed };
-    }),
+    ),
 
     count: jest.fn(
       async (args: { where: ArticleLikeWhere }) =>
         db.articleLikes.filter((l) => matchArticleLike(args.where, l)).length
     ),
-    groupBy: jest.fn(
-      async (args: {
-        by?: string[];
-        where?: { articleId?: { in?: number[] } };
-        _count?: { _all?: true; articleId?: true };
-      }) => {
-        const rawIds = args?.where?.articleId?.in ?? [];
-        const ids = isNumArray(rawIds) ? rawIds : [];
-        return ids.map((id) => {
-          const c = db.articleLikes.filter((l) => l.articleId === id).length;
-          return wantsCount(args?._count, 'articleId')
-            ? { articleId: id, _count: { articleId: c } }
-            : { articleId: id };
-        });
-      }
-    ),
+
+    groupBy: jest.fn(async (args: ArticleLikeGroupByArgs) => {
+      const rawIds = args?.where?.articleId?.in ?? [];
+      const ids = isNumArray(rawIds) ? rawIds : [];
+      return ids.map((id) => {
+        const c = db.articleLikes.filter((l) => l.articleId === id).length;
+        return wantsCount(args?._count, 'articleId')
+          ? { articleId: id, _count: { articleId: c } }
+          : { articleId: id };
+      });
+    }),
   },
   //#endregion
 
   //#region prisma.productLike
   productLike: {
-    findUnique: jest.fn(async ({ where }: any) => {
-      const { userId, productId } = pickProductLikeKey(where);
-      return (
-        db.productLikes.find(
+    findUnique: jest.fn(
+      async ({ where }: { where: PairKey<'userId', 'productId'> }) => {
+        const { userId, productId } = pickProductLikeKey(where);
+        return (
+          db.productLikes.find(
+            (l) => l.userId === userId && l.productId === productId
+          ) ?? null
+        );
+      }
+    ),
+
+    create: jest.fn(
+      async ({ data }: { data: { userId: number; productId: number } }) => {
+        const userId = Number(data.userId);
+        const productId = Number(data.productId);
+        const exists = db.productLikes.some(
           (l) => l.userId === userId && l.productId === productId
-        ) ?? null
-      );
-    }),
-
-    create: jest.fn(async ({ data }: any) => {
-      const userId = Number(data.userId);
-      const productId = Number(data.productId);
-      const exists = db.productLikes.some(
-        (l) => l.userId === userId && l.productId === productId
-      );
-      if (exists) {
-        const e: any = new Error('Unique constraint failed');
-        e.code = 'P2002';
-        throw e;
+        );
+        if (exists) {
+          const e = new Error('Unique constraint failed') as Error & {
+            code: string;
+          };
+          e.code = 'P2002';
+          throw e;
+        }
+        const row: ProductLikeRecord = { id: seq.pLike++, userId, productId };
+        db.productLikes.push(row);
+        return { ...row };
       }
-      const row: ProductLikeRecord = { id: seq.pLike++, userId, productId };
-      db.productLikes.push(row);
-      return { ...row };
-    }),
+    ),
 
-    delete: jest.fn(async ({ where }: any) => {
-      const { userId, productId } = pickProductLikeKey(where);
-      const idx = db.productLikes.findIndex(
-        (l) => l.userId === userId && l.productId === productId
-      );
-      if (idx < 0) {
-        const e: any = new Error('Not found');
-        e.code = 'P2025';
-        throw e;
+    delete: jest.fn(
+      async ({ where }: { where: PairKey<'userId', 'productId'> }) => {
+        const { userId, productId } = pickProductLikeKey(where);
+        const idx = db.productLikes.findIndex(
+          (l) => l.userId === userId && l.productId === productId
+        );
+        if (idx < 0) {
+          const e = new Error('Not found') as Error & { code: string };
+          e.code = 'P2025';
+          throw e;
+        }
+        const [removed] = db.productLikes.splice(idx, 1);
+        return { ...removed };
       }
-      const [removed] = db.productLikes.splice(idx, 1);
-      return { ...removed };
-    }),
+    ),
 
     count: jest.fn(
       async (args: { where: ProductLikeWhere }) =>
         db.productLikes.filter((l) => matchProductLike(args.where, l)).length
     ),
-    groupBy: jest.fn(
-      async (args: {
-        by?: string[];
-        where?: { productId?: { in?: number[] } };
-        _count?: { _all?: true; productId?: true };
-      }) => {
-        const rawIds = args?.where?.productId?.in ?? [];
-        const ids = isNumArray(rawIds) ? rawIds : [];
-        return ids.map((id) => {
-          const c = db.productLikes.filter((l) => l.productId === id).length;
-          return wantsCount(args?._count, 'productId')
-            ? { productId: id, _count: { productId: c } }
-            : { productId: id };
-        });
-      }
-    ),
+
+    groupBy: jest.fn(async (args: ProductLikeGroupByArgs) => {
+      const rawIds = args?.where?.productId?.in ?? [];
+      const ids = isNumArray(rawIds) ? rawIds : [];
+      return ids.map((id) => {
+        const c = db.productLikes.filter((l) => l.productId === id).length;
+        return wantsCount(args?._count, 'productId')
+          ? { productId: id, _count: { productId: c } }
+          : { productId: id };
+      });
+    }),
   },
   //#endregion
 
   //#region prisma.commentLike
   commentLike: {
     findUnique: jest.fn(
-      async ({
-        where: {
-          userId_commentId: { userId, commentId },
-        },
+      async (args: {
+        where: { userId_commentId: { userId: number; commentId: number } };
       }) => {
+        const { userId, commentId } = args.where.userId_commentId;
         return (
           db.commentLikes.find(
             (l) => l.userId === userId && l.commentId === commentId
@@ -871,21 +1005,30 @@ export const prisma = {
       }
     ),
 
-    findMany: jest.fn(async (args?: any) => {
+    findMany: jest.fn(async (args?: FindManyCommentLikeArgs) => {
       let list = db.commentLikes.slice();
 
       if (args?.where) {
-        const w = args.where as {
-          userId?: number;
-          commentId?: number | { in?: number[] };
-        };
-
+        const w = args.where;
         const hasCommentIdCond =
           typeof w.commentId === 'number' ||
-          (w.commentId && Array.isArray((w.commentId as any).in));
+          (w.commentId && Array.isArray((w.commentId as { in?: number[] }).in));
 
         if (hasCommentIdCond) {
-          list = list.filter((rec) => matchCommentLike(w as any, rec));
+          let cond: CommentLikeWhere =
+            typeof w.commentId === 'number'
+              ? { commentId: w.commentId }
+              : {
+                  commentId: {
+                    in: (w.commentId as { in?: number[] }).in ?? [],
+                  },
+                };
+
+          if (typeof w.userId === 'number') {
+            cond = { ...cond, userId: w.userId };
+          }
+
+          list = list.filter((rec) => matchCommentLike(cond, rec));
         }
 
         if (typeof w.userId === 'number') {
@@ -897,112 +1040,164 @@ export const prisma = {
         const dir = args.orderBy.id === 'asc' ? 1 : -1;
         list.sort((a, b) => (a.id - b.id) * dir);
       }
+
       const start = args?.skip ?? 0;
       const end = args?.take != null ? start + args.take : undefined;
       const sliced = list.slice(start, end);
 
+      // ---------- include.comment 처리 ----------
       const commentArg = args?.include?.comment;
-      const wantComment = !!commentArg;
-      const isSelect = typeof commentArg === 'object' && !!commentArg.select;
+      if (!commentArg) return sliced.map((x) => ({ ...x }));
+
+      // 선택/포함 타입 정의
+      type ArticleSelect = Partial<Record<keyof ArticleRecord, boolean>>;
+      type ProductSelect = Partial<Record<keyof ProductRecord, boolean>>;
+      type CommentBaseSelect = Partial<Record<keyof CommentRecord, boolean>>;
+
+      interface CommentSelectShape {
+        select: CommentBaseSelect & {
+          article?: { select?: ArticleSelect };
+          product?: { select?: ProductSelect };
+        };
+      }
+      interface CommentIncludeShape {
+        include?: {
+          article?: { select?: ArticleSelect };
+          product?: { select?: ProductSelect };
+        };
+      }
+
+      // 타입 가드
+      const hasSelect = (v: unknown): v is CommentSelectShape =>
+        typeof v === 'object' &&
+        v !== null &&
+        'select' in (v as Record<string, unknown>);
+
+      const hasInclude = (v: unknown): v is CommentIncludeShape =>
+        typeof v === 'object' &&
+        v !== null &&
+        'include' in (v as Record<string, unknown>);
+
+      const isSelect = hasSelect(commentArg);
       const sel = isSelect ? commentArg.select : undefined;
 
-      const pick = (obj: any, keysObj: Record<string, boolean> | undefined) => {
+      // 안전한 pick 유틸
+      const pick = <T extends Record<string, unknown>>(
+        obj: T | null,
+        keys?: Partial<Record<keyof T, boolean>>
+      ): T | null => {
         if (!obj) return null;
-        if (!keysObj) return { ...obj };
-        const out: any = {};
-        for (const k of Object.keys(keysObj)) {
-          if ((keysObj as any)[k]) out[k] = obj[k];
-        }
+        if (!keys) return { ...obj };
+        const out = {} as T;
+        (Object.keys(keys) as Array<keyof T>).forEach((k) => {
+          if (keys[k]) {
+            out[k] = obj[k];
+          }
+        });
         return out;
       };
 
+      // include 모드에서 article/product 포함 여부
       const wantArticle =
-        !isSelect &&
-        typeof commentArg === 'object' &&
-        !!commentArg?.include?.article;
+        !isSelect && hasInclude(commentArg) && !!commentArg.include?.article;
       const wantProduct =
-        !isSelect &&
-        typeof commentArg === 'object' &&
-        !!commentArg?.include?.product;
+        !isSelect && hasInclude(commentArg) && !!commentArg.include?.product;
 
-      const result = sliced.map((like) => {
-        if (!wantComment) return { ...like };
+      type CommentWithIncludes = CommentRecord & {
+        article?: ArticleRecord | null;
+        product?: ProductRecord | null;
+      };
 
+      return sliced.map((like) => {
         const c = db.comments.find((x) => x.id === like.commentId) || null;
-        if (!c) return { ...like, comment: null };
 
-        if (isSelect) {
-          const comment: any = pick(c, sel);
+        // include 모드 (select 아님)
+        if (!isSelect) {
+          let comment: CommentWithIncludes | null = c ? { ...c } : null;
 
-          if (sel?.article) {
-            const art =
-              c.articleId != null
-                ? db.articles.find((a) => a.id === c.articleId) || null
+          if (comment && wantArticle) {
+            comment.article =
+              c!.articleId != null
+                ? db.articles.find((a) => a.id === c!.articleId) || null
                 : null;
-            comment.article = sel.article.select
-              ? pick(art, sel.article.select)
-              : art;
           }
-          if (sel?.product) {
-            const prod =
-              c.productId != null
-                ? db.products.find((p) => p.id === c.productId) || null
+          if (comment && wantProduct) {
+            comment.product =
+              c!.productId != null
+                ? db.products.find((p) => p.id === c!.productId) || null
                 : null;
-            comment.product = sel.product.select
-              ? pick(prod, sel.product.select)
-              : prod;
           }
+
           return { ...like, comment };
         }
 
-        const comment: any = { ...c };
-        if (wantArticle) {
-          comment.article =
-            c.articleId != null
+        // select 모드
+        const commentSelected = pick(c, sel as CommentBaseSelect);
+
+        // article select
+        if (sel?.article) {
+          const art =
+            c && c.articleId != null
               ? db.articles.find((a) => a.id === c.articleId) || null
               : null;
+
+          (commentSelected as Record<string, unknown>)['article'] = sel.article
+            .select
+            ? pick(art, sel.article.select)
+            : art;
         }
-        if (wantProduct) {
-          comment.product =
-            c.productId != null
+
+        // product select
+        if (sel?.product) {
+          const prod =
+            c && c.productId != null
               ? db.products.find((p) => p.id === c.productId) || null
               : null;
+
+          (commentSelected as Record<string, unknown>)['product'] = sel.product
+            .select
+            ? pick(prod, sel.product.select)
+            : prod;
         }
-        return { ...like, comment };
+
+        return { ...like, comment: commentSelected };
       });
-      return result;
     }),
 
-    create: jest.fn(async ({ data: { userId, commentId } }) => {
-      const exists = db.commentLikes.some(
-        (l) => l.userId === userId && l.commentId === commentId
-      );
-      if (exists) {
-        const e: any = new Error('Unique constraint failed');
-        e.code = 'P2002';
-        throw e;
+    create: jest.fn(
+      async (args: { data: { userId: number; commentId: number } }) => {
+        const { userId, commentId } = args.data;
+        const exists = db.commentLikes.some(
+          (l) => l.userId === userId && l.commentId === commentId
+        );
+        if (exists) {
+          const e = new Error('Unique constraint failed') as Error & {
+            code: string;
+          };
+          e.code = 'P2002';
+          throw e;
+        }
+        const row: CommentLikeRecord = { id: seq.cLike++, userId, commentId };
+        db.commentLikes.push(row);
+        return { ...row };
       }
-      const row = { id: seq.cLike++, userId, commentId };
-      db.commentLikes.push(row);
-      return row;
-    }),
+    ),
 
     delete: jest.fn(
-      async ({
-        where: {
-          userId_commentId: { userId, commentId },
-        },
+      async (args: {
+        where: { userId_commentId: { userId: number; commentId: number } };
       }) => {
+        const { userId, commentId } = args.where.userId_commentId;
         const idx = db.commentLikes.findIndex(
           (l) => l.userId === userId && l.commentId === commentId
         );
         if (idx < 0) {
-          const e: any = new Error('Not found');
+          const e = new Error('Not found') as Error & { code: string };
           e.code = 'P2025';
           throw e;
         }
         const [removed] = db.commentLikes.splice(idx, 1);
-        return removed;
+        return { ...removed };
       }
     ),
 
@@ -1011,22 +1206,16 @@ export const prisma = {
         db.commentLikes.filter((l) => matchCommentLike(args.where, l)).length
     ),
 
-    groupBy: jest.fn(
-      async (args: {
-        by?: string[];
-        where?: { commentId?: { in?: number[] } };
-        _count?: { _all?: true; commentId?: true };
-      }) => {
-        const rawIds = args?.where?.commentId?.in ?? [];
-        const ids = isNumArray(rawIds) ? rawIds : [];
-        return ids.map((id) => {
-          const c = db.commentLikes.filter((l) => l.commentId === id).length;
-          return wantsCount(args?._count, 'commentId')
-            ? { commentId: id, _count: { commentId: c } }
-            : { commentId: id };
-        });
-      }
-    ),
+    groupBy: jest.fn(async (args: CommentLikeGroupByArgs) => {
+      const rawIds = args?.where?.commentId?.in ?? [];
+      const ids = isNumArray(rawIds) ? rawIds : [];
+      return ids.map((id) => {
+        const c = db.commentLikes.filter((l) => l.commentId === id).length;
+        return wantsCount(args?._count, 'commentId')
+          ? { commentId: id, _count: { commentId: c } }
+          : { commentId: id };
+      });
+    }),
   },
   //#endregion
 
@@ -1035,7 +1224,7 @@ export const prisma = {
     findMany: jest.fn(
       async (args?: {
         where?: { userId?: number; isRead?: boolean };
-        orderBy?: { createdAt?: 'asc' | 'desc' };
+        orderBy?: { createdAt?: OrderDir };
         skip?: number;
         take?: number;
       }) => {
@@ -1141,9 +1330,14 @@ export const prisma = {
 //#endregion
 
 //#region Prisma Mock: $transaction & default export
-(prisma as any).$transaction = jest.fn(async (arg: any) => {
-  if (Array.isArray(arg)) return Promise.all(arg);
-  if (typeof arg === 'function') return arg(prisma);
+type PrismaLike = typeof prisma & {
+  $transaction: jest.MockedFunction<(arg: unknown) => Promise<unknown>>;
+};
+
+(prisma as PrismaLike).$transaction = jest.fn(async (arg: unknown) => {
+  if (Array.isArray(arg)) return Promise.all(arg as unknown[]);
+  if (typeof arg === 'function')
+    return (arg as (tx: typeof prisma) => unknown)(prisma);
   return arg;
 });
 
@@ -1159,6 +1353,7 @@ export function prismaReset(): void {
   db.articleLikes = [];
   db.productLikes = [];
   db.commentLikes = [];
+  db.notifications = [];
   seq = {
     user: 1,
     article: 1,
@@ -1192,11 +1387,9 @@ export function prismaReset(): void {
 
   prisma.comment.findMany.mockClear();
   prisma.comment.findUnique.mockClear();
-  // prisma.comment.count.mockClear();
   prisma.comment.create.mockClear();
   prisma.comment.update.mockClear();
   prisma.comment.delete.mockClear();
-  // prisma.comment.deleteMany.mockClear();
 
   prisma.articleLike.count.mockClear();
   prisma.articleLike.groupBy.mockClear();
@@ -1212,7 +1405,7 @@ export function prismaReset(): void {
   prisma.notification.create.mockClear();
   prisma.notification.findUnique.mockClear();
 
-  (prisma as any).$transaction?.mockClear?.();
+  (prisma as PrismaLike).$transaction.mockClear();
 }
 
 export function seedUsers(
@@ -1226,7 +1419,6 @@ export function seedUsers(
       id: u.id,
       username: u.username,
       email: u.email,
-      // ⚠️ 이 함수는 "이미 해시된 비밀번호"를 넣는다고 가정
       password: u.password,
       images: u.images ?? [],
       createdAt: u.createdAt ?? new Date(),
@@ -1310,9 +1502,10 @@ export function seedComments(
 ): CommentRecord[] {
   const out: CommentRecord[] = [];
   for (const c of list) {
-    // XOR 보장: articleId 또는 productId 중 정확히 하나
-    const hasArticle = typeof (c as any).articleId === 'number';
-    const hasProduct = typeof (c as any).productId === 'number';
+    const hasArticle =
+      typeof (c as { articleId?: number }).articleId === 'number';
+    const hasProduct =
+      typeof (c as { productId?: number }).productId === 'number';
     if (hasArticle === hasProduct) {
       throw new Error(
         'seedComments: require exactly one of articleId or productId'
@@ -1322,8 +1515,8 @@ export function seedComments(
       id: c.id,
       content: c.content,
       userId: c.userId,
-      articleId: (c as any).articleId ?? null,
-      productId: (c as any).productId ?? null,
+      articleId: (c as { articleId?: number }).articleId ?? null,
+      productId: (c as { productId?: number }).productId ?? null,
       createdAt: c.createdAt ?? new Date(),
       updatedAt: c.updatedAt ?? new Date(),
     };

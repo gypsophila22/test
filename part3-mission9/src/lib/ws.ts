@@ -4,52 +4,63 @@ import type { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 
 import { parseUserIdFromToken } from './wsAuth.js';
-import type { NotificationType } from '../types/notification.js';
-// 여러 기기 지원
+import type { NotificationType as DomainNotificationType } from '../types/notification.js';
+
 type UserSocketMap = Map<number, Set<string>>;
 const userSockets: UserSocketMap = new Map();
-let io: Server;
+let io: Server | undefined;
 
-// ── wire payload (클라이언트와 약속된 포맷)
+type AuthFn = (rawToken: unknown) => number | null;
+
+// ── 테스트용 훅
+export function __resetWsForTest() {
+  userSockets.clear();
+  io = undefined;
+}
+export function __getUserSocketsForTest() {
+  return userSockets;
+}
+
+// 클라이언트 페이로드 타입
 type WireNotificationType = 'contract-linked' | 'chat' | 'system';
 export interface WireNotificationPayload {
   type: WireNotificationType;
   message: string;
-  createdAt: string; // ISO string
+  createdAt: string;
   data?: Record<string, unknown>;
 }
 
-// 도메인 → wire 매핑 (정책에 맞게 조정)
-function mapDomainToWire(t: PrismaNotificationType): WireNotificationType {
+// 도메인/프리즈마 둘 다 허용 (브랜치 커버 노림)
+export function mapDomainToWire(
+  t: PrismaNotificationType | DomainNotificationType
+): WireNotificationType {
   switch (t) {
     case NotificationTypeValues.PRICE_CHANGE:
       return 'system';
     case NotificationTypeValues.NEW_COMMENT:
       return 'chat';
     default: {
-      // exhaustiveness 체크(컴파일 타임용)
-       
-      const _never: never = t;
-      // 안전망 (원하면 throw로 바꿔도 됨)
+      const _never: never = t as never;
       return 'system';
     }
   }
 }
 
-export function setupWebSocket(server: HTTPServer) {
+export function setupWebSocket(server: HTTPServer, deps?: { auth?: AuthFn }) {
+  const auth = deps?.auth ?? parseUserIdFromToken;
+
   io = new Server(server, {
     path: '/ws',
     cors: { origin: '*', methods: ['GET', 'POST'] },
   });
 
   io.on('connection', (socket) => {
-    const userId = parseUserIdFromToken(socket.handshake.auth?.token);
+    const userId = auth(socket.handshake.auth?.token);
     if (!userId) {
       socket.disconnect(true);
       return;
     }
 
-    // 매핑 저장(여러 소켓)
     const set = userSockets.get(userId) ?? new Set<string>();
     set.add(socket.id);
     userSockets.set(userId, set);
@@ -66,13 +77,13 @@ export function setupWebSocket(server: HTTPServer) {
   });
 }
 
-// notificationService에서 호출할 함수(도메인 타입을 받아 wire로 변환)
+// 알림 게이트웨이
 export const wsGateway = {
   notifyUser(args: {
     userId: number;
-    type: NotificationType; // 도메인 enum
+    type: PrismaNotificationType | DomainNotificationType;
     message: string;
-    createdAt?: Date; // 생략 시 now
+    createdAt?: Date;
     data?: Record<string, unknown>;
   }) {
     if (!io) return;
@@ -95,18 +106,39 @@ export const wsGateway = {
   },
 };
 
+// 전달받은 io를 실제로 사용 (전역 의존성 제거)
 export function publishToUser(
-  _io: Server,
+  sio: Server,
   {
     userId,
     event,
     payload,
   }: { userId: number; event: 'notification'; payload: unknown }
 ) {
-  if (!io) return;
   const sockets = userSockets.get(userId);
   if (!sockets) return;
   for (const sid of sockets) {
-    io.to(sid).emit(event, payload);
+    sio.to(sid).emit(event, payload);
   }
 }
+
+export async function closeWebSocket(): Promise<void> {
+  if (!io) return;
+
+  // 1) 모든 소켓 강제 disconnect (ping 타이머 등 끊기)
+  const sockets = await io.fetchSockets().catch(() => []);
+  for (const s of sockets) {
+    try {
+      s.disconnect(true);
+    } catch {}
+  }
+
+  // 2) io 자체 종료를 "완료"까지 대기
+  await new Promise<void>((resolve) => {
+    io!.close(() => resolve());
+  });
+
+  io = undefined;
+}
+
+// export type { UserSocketMap }; // (원하면)

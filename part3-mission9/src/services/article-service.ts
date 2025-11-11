@@ -14,8 +14,8 @@ class ArticleService {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
-    const sort = query.sort || 'recent';
-    const search = query.keyword || '';
+    const sort = query.sort === 'old' ? 'old' : 'recent';
+    const search = (query.keyword ?? query.query ?? query.search ?? '').trim();
 
     const orderBy: Prisma.ArticleOrderByWithRelationInput =
       sort === 'old' ? { createdAt: 'asc' } : { createdAt: 'desc' };
@@ -45,16 +45,16 @@ class ArticleService {
     const articleIds = articles.map((a) => a.id);
     const commentIds = articles.flatMap((a) => a.comments.map((c) => c.id));
 
-    const articleLikeCounts = await articleLikeRepository.countByTargetIds(
-      articleIds
-    );
+    const articleLikeCounts = articleIds.length
+      ? await articleLikeRepository.countByTargetIds(articleIds)
+      : [];
     const articleLikeCountMap = Object.fromEntries(
       articleLikeCounts.map((al) => [al.articleId, al._count.articleId])
     );
 
-    const commentLikeCounts = await commentLikeRepository.countByTargetIds(
-      commentIds
-    );
+    const commentLikeCounts = commentIds.length
+      ? await commentLikeRepository.countByTargetIds(commentIds)
+      : [];
     const commentLikeCountMap = Object.fromEntries(
       commentLikeCounts.map((cl) => [cl.commentId, cl._count.commentId])
     );
@@ -62,28 +62,28 @@ class ArticleService {
     let myLikedArticleIds: number[] = [];
     let myLikedCommentIds: number[] = [];
 
-    if (userId) {
-      const likedArticles = await articleLikeRepository.findByUserAndTargetIds(
-        userId,
-        articleIds
-      );
+    if (typeof userId === 'number') {
+      const likedArticles = articleIds.length
+        ? await articleLikeRepository.countByTargetIds(articleIds)
+        : [];
       myLikedArticleIds = likedArticles.map((l) => l.articleId);
 
-      const likedComments = await commentLikeRepository.findByUserAndTargetIds(
-        userId,
-        commentIds
-      );
+      const likedComments = commentIds.length
+        ? await commentLikeRepository.findByUserAndTargetIds(userId, commentIds)
+        : [];
       myLikedCommentIds = likedComments.map((l) => l.commentId);
     }
 
     const articlesWithLike = articles.map((a) => ({
       ...a,
       likeCount: articleLikeCountMap[a.id] || 0,
-      isLiked: userId ? myLikedArticleIds.includes(a.id) : false,
+      isLiked:
+        typeof userId === 'number' ? myLikedArticleIds.includes(a.id) : false,
       comments: a.comments.map((c) => ({
         ...c,
         likeCount: commentLikeCountMap[c.id] || 0,
-        isLiked: userId ? myLikedCommentIds.includes(c.id) : false,
+        isLiked:
+          typeof userId === 'number' ? myLikedCommentIds.includes(c.id) : false,
       })),
     }));
 

@@ -72,8 +72,8 @@ describe('[통합] 게시글 API (인증 필요)', () => {
 
   test('PATCH /articles/:id → 403 (소유자 아님)', async () => {
     prismaReset();
-    seedArticles([{ id: 2, title: 'X', userId: 999 }]); // 글 주인은 999
-    const { accessToken } = await loginAndGetSession(app, { userId: 7 }); // 로그인 사용자는 7
+    seedArticles([{ id: 2, title: 'X', userId: 999 }]);
+    const { accessToken } = await loginAndGetSession(app, { userId: 7 });
 
     const res = await request(app)
       .patch('/articles/2')
@@ -130,9 +130,9 @@ describe('[통합] 게시글 API (인증 필요)', () => {
     );
 
     const unlikeRes = await request(app)
-      .delete('/articles/10/like') // 댓글이면 '/comments/:id/like'
+      .delete('/articles/10/like')
       .set('Authorization', `Bearer ${accessToken}`)
-      .expect(200); // ✅ 204 말고 200으로 기대
+      .expect(200);
 
     expect(unlikeRes.body).toEqual(
       expect.objectContaining({

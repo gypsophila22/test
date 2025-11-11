@@ -21,6 +21,17 @@ module.exports = {
     '!src/**/swagger.ts',
     '!src/**/ws.ts',
     '!src/tests/**',
+    '!src/tests/_helper/**',
   ],
-  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/dist/',
+    '<rootDir>/src/tests/',
+    '<rootDir>/src/tests/_helper/',
+  ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '<rootDir>/src/tests/_helper/',
+  ],
 };

@@ -2,23 +2,33 @@ import { jest } from '@jest/globals';
 import bcrypt from 'bcrypt';
 import type { JwtPayload } from 'jsonwebtoken';
 import request from 'supertest';
+import type { Response as SupertestResponse } from 'supertest';
 
-import { prisma } from '../../lib/prismaClient.js';
-import { validation } from '../../middlewares/validation.js';
-import { asMockFn, type Awaited } from '../_helper/jest-typed.js';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
   REFRESH_TOKEN_COOKIE_NAME,
 } from '../../lib/constants.js';
+import { prisma } from '../../lib/prismaClient.js';
+import { validation } from '../../middlewares/validation.js';
+import { asMockFn, type Awaited } from '../_helper/jest-typed.js';
 
-function extractCookieUnsafe(res: any, name: string): string | null {
-  const raw = res.get('Set-Cookie');
-  const arr = Array.isArray(raw) ? raw : raw ? [raw] : [];
+export function extractCookieUnsafe(
+  res: SupertestResponse,
+  name: string
+): string | null {
+  const raw = res.get?.('Set-Cookie') as string | string[] | undefined;
+  const raw2 =
+    raw ??
+    (res.headers?.['set-cookie'] as unknown as string | string[] | undefined);
+
+  const arr: string[] = Array.isArray(raw2) ? raw2 : raw2 ? [raw2] : [];
   const item = arr.find(
-    (c: string) => typeof c === 'string' && c.startsWith(`${name}=`)
+    (c) => typeof c === 'string' && c.startsWith(`${name}=`)
   );
   if (!item) return null;
-  const first = item.split(';', 1)[0];
+
+  const semi = item.indexOf(';');
+  const first = semi >= 0 ? item.slice(0, semi) : item;
   const eq = first.indexOf('=');
   return eq >= 0 ? first.slice(eq + 1) : null;
 }
@@ -37,7 +47,6 @@ describe('[통합] 인증 (회원가입/로그인)', () => {
         typeof req.body?.username !== 'string' ||
         typeof req.body?.password !== 'string'
       ) {
-        // 스키마는 실제 미들웨어에서 검사하므로 여기선 패스
       }
       next();
       return Promise.resolve();
@@ -271,7 +280,6 @@ describe('[통합] 인증 (회원가입/로그인)', () => {
   });
 
   test('POST /auth/refresh (토큰 위조: 재서명으로 시그니처 불일치) → 401', async () => {
-    // 1) 로그인 가능한 유저 mock
     type FindUniqueArgs = Parameters<typeof prisma.user.findUnique>[0];
     type FindUniqueRet = Awaited<ReturnType<typeof prisma.user.findUnique>>;
 
@@ -288,7 +296,6 @@ describe('[통합] 인증 (회원가입/로그인)', () => {
       updatedAt: new Date(),
     } satisfies NonNullable<FindUniqueRet>);
 
-    // 2) 정상 로그인 → 진짜 refresh 토큰 확보
     const loginRes = await request(app)
       .post('/users/login')
       .send({ username: 'siguser', password: '1234abcd!' })
@@ -297,42 +304,61 @@ describe('[통합] 인증 (회원가입/로그인)', () => {
     const refreshRaw = extractCookieUnsafe(loginRes, REFRESH_TOKEN_COOKIE_NAME);
     expect(typeof refreshRaw).toBe('string');
 
-    // 3) 동일 payload로 "다른 시크릿" 재서명 → forged
     const jwt = (await import('jsonwebtoken')).default;
     const C1 = await import('../../lib/constants.js');
 
     const decoded = jwt.decode(refreshRaw!) as JwtPayload | null;
     const sub = (decoded?.sub as unknown as number) ?? 777;
 
-    const BAD_SECRET = `${C1.REFRESH_TOKEN_SECRET}__FORGED__`; // 반드시 다름
+    const BAD_SECRET = `${C1.REFRESH_TOKEN_SECRET}__FORGED__`;
     const forged = jwt.sign({ sub, type: 'refresh' }, BAD_SECRET, {
       algorithm: 'HS256',
       expiresIn: '7d',
     });
 
-    // 4) sanity: jsonwebtoken 레벨에서도 반드시 실패해야 함
     expect(() =>
       jwt.verify(forged, C1.REFRESH_TOKEN_SECRET, { algorithms: ['HS256'] })
     ).toThrow();
 
-    // 5) 모듈 캐시 리셋 후 fresh import로 함수 단위 검증
     jest.resetModules();
     const { verifyRefreshToken } = await import('../../lib/token.js');
-
-    // 혹시 모르게 C2.SECRET과 BAD_SECRET이 같은지 확인 (디버깅용, 필요시 주석)
-    // expect(BAD_SECRET).not.toBe(C2.REFRESH_TOKEN_SECRET);
 
     expect(() => verifyRefreshToken(forged)).toThrow(
       /유효하지 않은 리프레시 토큰/
     );
 
-    // 6) 라우터 401
     const fakeCookieHeader = `${REFRESH_TOKEN_COOKIE_NAME}=${encodeURIComponent(
       forged
     )}`;
     await request(app)
       .post('/auth/refresh')
       .set('Cookie', [fakeCookieHeader])
+      .expect(401);
+  });
+
+  // 401: Authorization 헤더 없음
+  test('GET /users/me → 401 (헤더 없음)', async () => {
+    await request(app).get('/users/me').expect(401);
+  });
+
+  // 401: Bearer 형식 깨짐
+  test('GET /users/me → 401 (잘못된 Bearer 형식)', async () => {
+    await request(app)
+      .get('/users/me')
+      .set('Authorization', 'Token abc')
+      .expect(401);
+  });
+
+  // 401: refresh 쿠키 없음
+  test('POST /auth/refresh → 401 (쿠키 없음)', async () => {
+    await request(app).post('/auth/refresh').expect(401);
+  });
+
+  // 401: 위조/쓰레기 쿠키
+  test('POST /auth/refresh → 401 (위조 쿠키)', async () => {
+    await request(app)
+      .post('/auth/refresh')
+      .set('Cookie', [`REFRESH_TOKEN=fake.jwt.parts`])
       .expect(401);
   });
 });

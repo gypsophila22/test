@@ -42,6 +42,18 @@ describe('[통합] 게시글 API (비인증)', () => {
     // 서비스가 댓글·댓글좋아요도 집계한다면 필요
     seedCommentLikes([{ commentId: 100, userId: 1 }]);
   });
+
+  test('GET /products?query=__not_exists__ → 200 []', async () => {
+    const app = await createTestApp();
+    seedProducts([{ id: 1, name: 'Alpha', price: 1, userId: 1 }]);
+
+    const res = await request(app)
+      .get('/products?query=__not_exists__')
+      .expect(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBe(0);
+  });
+
   test('GET /products → 200 + 목록', async () => {
     const res = await request(app)
       .get('/products')

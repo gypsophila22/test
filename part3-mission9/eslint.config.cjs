@@ -34,6 +34,7 @@ module.exports = [
     rules: {
       // @typescript-eslint 권장 규칙 기반
       ...tseslint.configs.recommended.rules,
+      '@typescript-eslint/no-explicit-any': 'error',
 
       // 사용 규칙 커스터마이즈
       'no-console': ['warn', { allow: ['warn', 'error'] }],

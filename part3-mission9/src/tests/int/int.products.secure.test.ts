@@ -82,7 +82,6 @@ describe('[통합] 상품 API (인증 필요)', () => {
 
   test('PATCH /products/:id → 403 (소유자 아님)', async () => {
     prismaReset();
-    // 글 주인은 999, 로그인 사용자는 7
     seedProducts([
       { id: 2, name: 'X', description: 'd', price: 1000, userId: 999 },
     ]);
@@ -152,7 +151,7 @@ describe('[통합] 상품 API (인증 필요)', () => {
     const unlikeRes = await request(app)
       .delete('/products/10/like')
       .set('Authorization', `Bearer ${accessToken}`)
-      .expect(200); // ✅ 204 대신 200으로 본문 메시지/카운트 확인
+      .expect(200);
 
     expect(unlikeRes.body).toEqual(
       expect.objectContaining({

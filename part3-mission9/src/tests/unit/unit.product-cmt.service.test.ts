@@ -11,8 +11,11 @@ import AppError from '../../lib/appError.js';
 import { commentRepository } from '../../repositories/comments/comment-repository.js';
 import { productCommentRepository } from '../../repositories/comments/product-cmt-repository.js';
 import { commentLikeRepository } from '../../repositories/like-repository.js';
+import { notificationRepository } from '../../repositories/notification-repository.js';
 import { productRepository } from '../../repositories/product-repository.js';
 import { userRepository } from '../../repositories/user-repository.js';
+import { productCommentService } from '../../services/comments/product-cmt-service.js';
+import { notificationService } from '../../services/notification-service.js';
 import {
   makeProductLite,
   makeComment,
@@ -20,9 +23,6 @@ import {
   makeNotification,
   makeCommentLike,
 } from '../_helper/factories.js';
-import { notificationRepository } from '../../repositories/notification-repository.js';
-import { productCommentService } from '../../services/comments/product-cmt-service.js';
-import { notificationService } from '../../services/notification-service.js';
 
 describe('ProductCommentService', () => {
   const PRODUCT_ID = 20;
@@ -74,7 +74,6 @@ describe('ProductCommentService', () => {
     );
     const pushSpy = jest
       .spyOn(notificationService, 'pushProductComment')
-      // 알림 객체 반환 타입이면 값 필요, 여기선 안쓰여도 호출 여부만 검증
       .mockResolvedValue(
         makeNotification({
           userId: OWNER_ID,
@@ -85,7 +84,7 @@ describe('ProductCommentService', () => {
       );
 
     await productCommentService.createProductComment(PRODUCT_ID, 'c', OWNER_ID);
-    expect(pushSpy).not.toHaveBeenCalled(); // 내 상품이면 스킵
+    expect(pushSpy).not.toHaveBeenCalled();
   });
 
   test('createProductComment: 남의 상품이면 알림 발송', async () => {

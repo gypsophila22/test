@@ -165,7 +165,7 @@ describe('ArticleCommentService', () => {
           userId: 42,
           articleId: 10,
           commentId: 777,
-          message: '새 댓글' /* type 생략 가능 */,
+          message: '새 댓글',
         })
       );
 
@@ -239,7 +239,7 @@ describe('ArticleCommentService', () => {
           userId: 42,
           articleId: 10,
           commentId: 777,
-          message: '새 댓글' /* type 생략 가능 */,
+          message: '새 댓글',
         })
       );
 
@@ -279,13 +279,11 @@ describe('ArticleCommentService', () => {
   });
 
   test('commentLike / commentUnlike 플로우', async () => {
-    // like: 중복 → 에러
     jest.spyOn(commentLikeRepository, 'exists').mockResolvedValueOnce(true);
     await expect(
       articleCommentService.commentLike(OTHER_USER_ID, 500)
     ).rejects.toThrow(AppError);
 
-    // like: 정상
     jest.spyOn(commentLikeRepository, 'exists').mockResolvedValueOnce(false);
     const create = jest
       .spyOn(commentLikeRepository, 'create')
@@ -297,13 +295,11 @@ describe('ArticleCommentService', () => {
     expect(create).toHaveBeenCalled();
     expect(liked.likeCount).toBe(7);
 
-    // unlike: 기록 없음 → 에러
     jest.spyOn(commentLikeRepository, 'exists').mockResolvedValueOnce(false);
     await expect(
       articleCommentService.commentUnlike(OTHER_USER_ID, 500)
     ).rejects.toThrow(AppError);
 
-    // unlike: 정상
     jest.spyOn(commentLikeRepository, 'exists').mockResolvedValueOnce(true);
     const del = jest
       .spyOn(commentLikeRepository, 'delete')

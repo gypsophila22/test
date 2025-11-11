@@ -131,7 +131,7 @@ describe('[통합] 유저 API (인증 필요)', () => {
           userId: 7,
           articleId: 101,
           productId: null,
-          likeCount: expect.any(Number), // 보통 0
+          likeCount: expect.any(Number),
         }),
         expect.objectContaining({
           id: 2,

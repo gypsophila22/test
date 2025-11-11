@@ -1,17 +1,29 @@
-import { verifyAccessToken } from './token.js';
+import { verifyAccessToken as realVerifyAccessToken } from './token.js';
 
-// 소켓 handshake로부터 받은 token(raw)을 받아서 userId를 뽑아주는 함수
-export function parseUserIdFromToken(rawToken: unknown): number | null {
-  if (typeof rawToken !== 'string') {
-    return null;
-  }
+// export function parseUserIdFromToken(rawToken: unknown): number | null {
+//   if (typeof rawToken !== 'string') {
+//     return null;
+//   }
 
+//   try {
+//     const { userId } = verifyAccessToken(rawToken);
+//     if (typeof userId !== 'number') return null;
+//     return userId;
+//   } catch (_err) {
+//     return null;
+//   }
+// }
+
+export function parseUserIdFromToken(
+  rawToken: unknown,
+  // ★ 테스트에서 주입 가능
+  verify: (t: string) => { userId: number } = realVerifyAccessToken
+): number | null {
+  if (typeof rawToken !== 'string') return null;
   try {
-    const { userId } = verifyAccessToken(rawToken); // <- token.ts에서 온 거 그대로 사용
-    if (typeof userId !== 'number') return null;
-    return userId;
-  } catch (_err) {
-    // 토큰 만료 / 위조 등으로 verifyAccessToken이 에러 던지면 여기로 옴
+    const { userId } = verify(rawToken);
+    return typeof userId === 'number' ? userId : null;
+  } catch {
     return null;
   }
 }

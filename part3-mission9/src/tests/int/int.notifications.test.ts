@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs';
 import request from 'supertest';
 
-import { createTestApp } from '../_helper/test-app.js';
 import { prisma } from '../../lib/prismaClient.js';
+import { createTestApp } from '../_helper/test-app.js';
+import { loginAndGetSession } from '../_helper/test-utils.js';
 
 jest.setTimeout(20_000);
 
@@ -31,6 +32,27 @@ describe('Notifications API (secure)', () => {
 
     expect(res.status).toBe(200);
     tokenUser1 = res.body.accessToken as string;
+  });
+
+  test('PATCH /notifications/read-all → 200 {count:0}', async () => {
+    const app = await createTestApp();
+    const { accessToken } = await loginAndGetSession(app, { userId: 77 });
+    const res = await request(app)
+      .patch('/notifications/read-all')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect((r) => {
+        if (![200, 204].includes(r.status)) {
+          throw new Error(`expected 200 or 204, got ${r.status}`);
+        }
+      });
+
+    if (res.status === 200) {
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          data: expect.objectContaining({ count: expect.any(Number) }),
+        })
+      );
+    }
   });
 
   test('GET /notifications -> 내 알림 목록', async () => {

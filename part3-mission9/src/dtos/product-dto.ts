@@ -51,6 +51,8 @@ export type ProductQuery = {
   limit?: number;
   sort?: 'recent' | 'old';
   keyword?: string;
+  query?: string;
+  search?: string;
 };
 
 export type ProductById = {

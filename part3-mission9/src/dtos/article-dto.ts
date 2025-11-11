@@ -48,6 +48,8 @@ export type ArticleQuery = {
   limit?: number;
   sort?: 'recent' | 'old';
   keyword?: string;
+  query?: string;
+  search?: string;
 };
 
 export interface UpdateArticleDto {

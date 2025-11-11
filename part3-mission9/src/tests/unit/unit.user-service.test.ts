@@ -70,9 +70,6 @@ const mockVerifyRefresh = token.verifyRefreshToken as jest.MockedFunction<
 beforeEach(() => {
   jest.clearAllMocks();
 });
-// afterEach(() => {
-//   jest.restoreAllMocks();
-// });
 
 describe('UserService', () => {
   /* ───────── register ───────── */
@@ -199,7 +196,6 @@ describe('UserService', () => {
     });
 
     test('현재 비밀번호 불일치 → 400', async () => {
-      // 저장된 해시를 old와 다르게 만들어 compare가 false가 되게
       const stored = await bcrypt.hash('SOMETHING_ELSE', 10);
       type WithPw = NonNullable<
         Awaited<ReturnType<typeof userRepo.userRepository.findByIdWithPassword>>
@@ -252,7 +248,6 @@ describe('UserService', () => {
 
       const out = await userService.updatePassword(7, 'old', 'new');
 
-      // 실제 해시 문자열 자체는 서비스 내부에서 생성되므로 any(String)
       expect(spyUpdatePassword).toHaveBeenCalledWith(7, expect.any(String));
       expect(out).toEqual(
         expect.objectContaining({ id: 7, username: 'u', email: 'u@ex.com' })
@@ -264,7 +259,6 @@ describe('UserService', () => {
   /* ───────── 댓글 집계 ───────── */
   describe('comments aggregation', () => {
     test('getUserComments → likeCount 합성', async () => {
-      // ⛔ body 아님 → 실제 타입이 content 라면 content로 맞춤
       type Comments = Awaited<
         ReturnType<typeof userRepo.userRepository.getUserComments>
       >;
@@ -300,7 +294,6 @@ describe('UserService', () => {
         2
       );
 
-      // 서비스 구현이 content→body로 매핑해 반환한다면 그에 맞춰 기대값 작성
       expect(out).toEqual([
         expect.objectContaining({ id: 1, likeCount: 3 }),
         expect.objectContaining({ id: 2, likeCount: 5 }),

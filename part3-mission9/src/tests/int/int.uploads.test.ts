@@ -23,6 +23,10 @@ describe('[통합] 이미지 업로드', () => {
     }
   });
 
+  test('POST /images/upload/single → 400 (파일 없음)', async () => {
+    await request(app).post('/images/upload/single').expect(400);
+  });
+
   test('단일 업로드: 이미지(jpg) → 200 + 파일 생성', async () => {
     const jpg = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
     const res = await request(app)

@@ -106,12 +106,9 @@ class Validation {
   // ------------------------------
   // ID 검증
   // ------------------------------
-  idSchema = z
-    .string()
-    .refine((val) => /^[1-9]\d*$/.test(val), {
-      message: 'ID가 올바르지 않습니다.',
-    })
-    .transform((val) => Number(val));
+  idSchema = z.string().refine((val) => /^[1-9]\d*$/.test(val), {
+    message: 'ID가 올바르지 않습니다.',
+  });
 
   // ------------------------------
   // 유저네임, 이메일 중복 검사 미들웨어

@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import { notificationController } from '../controllers/notification-controller.js';
 import { accessAuth } from '../lib/passport/index.js';
+import { validation } from '../middlewares/validation.js';
 
 const router = Router();
 
@@ -14,6 +15,7 @@ router.get(
 router.patch(
   '/:notificationId/read',
   accessAuth,
+  validation.validateParam('notificationId', validation.idSchema),
   notificationController.markAsRead
 );
 router.patch('/read-all', accessAuth, notificationController.markAllAsRead);

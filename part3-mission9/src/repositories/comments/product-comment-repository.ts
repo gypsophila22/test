@@ -1,6 +1,6 @@
 import { prisma } from '../../lib/prismaClient.js';
 
-export const productCommentRepository = {
+class ProductCommentRepository {
   findByProductId(productId: number) {
     return prisma.comment.findMany({
       where: { productId },
@@ -13,7 +13,7 @@ export const productCommentRepository = {
       },
       orderBy: { createdAt: 'desc' },
     });
-  },
+  }
 
   create(productId: number, content: string, userId: number) {
     return prisma.comment.create({
@@ -23,7 +23,7 @@ export const productCommentRepository = {
         productId,
       },
     });
-  },
+  }
 
   async countByCommentIds(commentIds: number[]) {
     return prisma.commentLike.groupBy({
@@ -31,12 +31,14 @@ export const productCommentRepository = {
       _count: { commentId: true },
       where: { commentId: { in: commentIds } },
     });
-  },
+  }
 
   async findByUserAndCommentIds(userId: number, commentIds: number[]) {
     return prisma.commentLike.findMany({
       where: { userId, commentId: { in: commentIds } },
       select: { commentId: true },
     });
-  },
-};
+  }
+}
+
+export const productCommentRepository = new ProductCommentRepository();

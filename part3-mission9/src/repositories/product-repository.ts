@@ -121,6 +121,17 @@ class ProductRepository {
       select: { id: true, userId: true, name: true },
     });
   }
+
+  async updatePriceTx(
+    tx: Prisma.TransactionClient,
+    productId: number,
+    price: number
+  ) {
+    return tx.product.update({
+      where: { id: productId },
+      data: { price },
+    });
+  }
 }
 
 export const productRepository = new ProductRepository();

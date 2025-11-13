@@ -9,12 +9,12 @@ import {
 
 import AppError from '../../lib/appError.js';
 import { articleRepository } from '../../repositories/article-repository.js';
-import { articleCommentRepository } from '../../repositories/comments/article-cmt-repository.js';
+import { articleCommentRepository } from '../../repositories/comments/article-comment-repository.js';
 import { commentRepository } from '../../repositories/comments/comment-repository.js';
 import { commentLikeRepository } from '../../repositories/like-repository.js';
 import { notificationRepository } from '../../repositories/notification-repository.js';
 import { userRepository } from '../../repositories/user-repository.js';
-import { articleCommentService } from '../../services/comments/article-cmt-service.js';
+import { articleCommentService } from '../../services/comments/article-comment-service.js';
 import { notificationService } from '../../services/notification-service.js';
 import {
   makeArticleLite,
@@ -23,6 +23,7 @@ import {
   makeListedComment,
   makeCommentLike,
 } from '../_helper/factories.js';
+import prisma from '../_helper/prisma-mock.js';
 
 describe('ArticleCommentService', () => {
   const ARTICLE_ID = 10;
@@ -40,13 +41,14 @@ describe('ArticleCommentService', () => {
         makeListedComment({ id: 102, content: 'c2', user: { username: 'u2' } }),
       ]);
 
+    jest.spyOn(commentLikeRepository, 'countByTargetIds').mockResolvedValue([
+      { commentId: 101, _count: { commentId: 3 } },
+      { commentId: 102, _count: { commentId: 0 } },
+    ]);
     jest
-      .spyOn(commentLikeRepository, 'count')
-      .mockImplementation(async (cid: number) => (cid === 101 ? 3 : 0));
-    jest
-      .spyOn(commentLikeRepository, 'exists')
-      .mockImplementation(
-        async (uid: number, cid: number) => uid === OTHER_USER_ID && cid === 101
+      .spyOn(commentLikeRepository, 'findByUserAndTargetIds')
+      .mockImplementation(async (uid: number, _ids: number[]) =>
+        uid === OTHER_USER_ID ? [{ commentId: 101 }] : []
       );
 
     const list = await articleCommentService.getCommentsByArticleId(
@@ -189,20 +191,27 @@ describe('ArticleCommentService', () => {
   });
 
   test('markAsRead: 정상', async () => {
-    const repoUpd = jest
-      .spyOn(notificationRepository, 'markAsRead')
-      .mockResolvedValue({ count: 1 });
-    const out = await notificationService.markAsRead(99, 7);
-    expect(repoUpd).toHaveBeenCalledWith(99, 7);
-    expect(out).toEqual({ count: 1 });
+    const upd = jest
+      .spyOn(prisma.notification, 'updateMany')
+      .mockResolvedValue({ count: 1 }); // Prisma.PrismaPromise<BatchPayload> 흉내
+
+    await expect(
+      notificationService.markAsRead(99, 7)
+    ).resolves.toBeUndefined();
+
+    expect(upd).toHaveBeenCalledWith({
+      where: { id: 7, userId: 99 },
+      data: { isRead: true },
+    });
   });
 
-  test('markAsRead: 권한없음', async () => {
+  test('markAsRead: 알림이 없거나 내 것이 아니면 404', async () => {
     jest
-      .spyOn(notificationRepository, 'markAsRead')
-      .mockRejectedValue(new AppError('요청이 허용되지 않습니다.', 403));
+      .spyOn(prisma.notification, 'updateMany')
+      .mockResolvedValue({ count: 0 });
+
     await expect(notificationService.markAsRead(99, 7)).rejects.toThrow(
-      '요청이 허용되지 않습니다.'
+      '알림을 찾을 수 없습니다.'
     );
   });
 

@@ -9,12 +9,12 @@ import {
 
 import AppError from '../../lib/appError.js';
 import { commentRepository } from '../../repositories/comments/comment-repository.js';
-import { productCommentRepository } from '../../repositories/comments/product-cmt-repository.js';
+import { productCommentRepository } from '../../repositories/comments/product-comment-repository.js';
 import { commentLikeRepository } from '../../repositories/like-repository.js';
 import { notificationRepository } from '../../repositories/notification-repository.js';
 import { productRepository } from '../../repositories/product-repository.js';
 import { userRepository } from '../../repositories/user-repository.js';
-import { productCommentService } from '../../services/comments/product-cmt-service.js';
+import { productCommentService } from '../../services/comments/product-comment-service.js';
 import { notificationService } from '../../services/notification-service.js';
 import {
   makeProductLite,
@@ -23,6 +23,7 @@ import {
   makeNotification,
   makeCommentLike,
 } from '../_helper/factories.js';
+import prisma from '../_helper/prisma-mock.js';
 
 describe('ProductCommentService', () => {
   const PRODUCT_ID = 20;
@@ -38,8 +39,15 @@ describe('ProductCommentService', () => {
       .mockResolvedValue([
         makeListedComment({ id: 901, content: 'p1', user: { username: 'u' } }),
       ]);
-    jest.spyOn(commentLikeRepository, 'count').mockResolvedValue(2);
-    jest.spyOn(commentLikeRepository, 'exists').mockResolvedValue(true);
+    jest
+      .spyOn(commentLikeRepository, 'countByTargetIds')
+      .mockResolvedValue([{ commentId: 901, _count: { commentId: 2 } }]);
+
+    jest
+      .spyOn(commentLikeRepository, 'findByUserAndTargetIds')
+      .mockImplementation(async (uid: number, _ids: number[]) =>
+        uid === OTHER_USER_ID ? [{ commentId: 901 }] : []
+      );
 
     const list = await productCommentService.getCommentsByProductId(
       PRODUCT_ID,
@@ -136,20 +144,27 @@ describe('ProductCommentService', () => {
   });
 
   test('markAsRead: 정상', async () => {
-    const repoUpd = jest
-      .spyOn(notificationRepository, 'markAsRead')
+    const upd = jest
+      .spyOn(prisma.notification, 'updateMany')
       .mockResolvedValue({ count: 1 });
-    const out = await notificationService.markAsRead(99, 7);
-    expect(repoUpd).toHaveBeenCalledWith(99, 7);
-    expect(out).toEqual({ count: 1 });
+
+    await expect(
+      notificationService.markAsRead(99, 7)
+    ).resolves.toBeUndefined();
+
+    expect(upd).toHaveBeenCalledWith({
+      where: { id: 7, userId: 99 },
+      data: { isRead: true },
+    });
   });
 
-  test('markAsRead: 권한없음', async () => {
+  test('markAsRead: 알림이 없거나 내 것이 아니면 404', async () => {
     jest
-      .spyOn(notificationRepository, 'markAsRead')
-      .mockRejectedValue(new AppError('요청이 허용되지 않습니다.', 403));
+      .spyOn(prisma.notification, 'updateMany')
+      .mockResolvedValue({ count: 0 });
+
     await expect(notificationService.markAsRead(99, 7)).rejects.toThrow(
-      '요청이 허용되지 않습니다.'
+      '알림을 찾을 수 없습니다.'
     );
   });
 

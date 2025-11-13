@@ -36,7 +36,7 @@ export async function buildApp(opts: { forTest?: boolean } = {}) {
   app.use(requestLogger);
 
   app.use('/', routes);
-  setupSwagger(app); // swagger는 필요 시 끄고 싶으면 forTest 조건 넣어도 됨
+  setupSwagger(app);
 
   app.use(errorHandler);
 

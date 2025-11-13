@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { notificationService } from './notification-service.js';
 import type { ProductQuery, UpdateProductDto } from '../dtos/product-dto.js';
 import AppError from '../lib/appError.js';
+import { prisma } from '../lib/prismaClient.js';
 import {
   productLikeRepository,
   commentLikeRepository,
@@ -163,7 +164,7 @@ class ProductService {
   async updateProductPrice(
     productId: number,
     newPrice: number,
-    _actorUserId: number
+    _actorUserId: number // 안 쓰면 _ 붙이기
   ) {
     // 1. 기존 상품
     const product = await productRepository.findUnique(productId);
@@ -171,32 +172,42 @@ class ProductService {
       throw new AppError('존재하지 않는 상품입니다.', 404);
     }
 
-    // 2. 가격 실제로 바뀌었는지
-    if (product.price !== newPrice) {
-      // DB 반영
-      const updated = await productRepository.updatePrice(productId, newPrice);
-
-      // 좋아요한 유저들
-      const likedUsers = await productLikeRepository.findUsersWhoLikedProduct(
-        productId
-      );
-
-      // 각각에게 알림
-      for (const u of likedUsers) {
-        await notificationService.pushPriceChange({
-          receiverUserId: u.id,
-          productId,
-          oldPrice: product.price,
-          newPrice,
-          productName: product.name,
-        });
-      }
-
-      return updated;
+    // 2. 가격이 같으면 그냥 반환
+    if (product.price === newPrice) {
+      return product;
     }
 
-    // 가격이 같으면 그냥 원래 상품 리턴해도 됨
-    return product;
+    // 3. 트랜잭션: 가격 업데이트 + 좋아요 유저 ID 조회
+    const { updatedProduct, likedUserIds } = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const updatedProduct = await productRepository.updatePriceTx(
+          tx,
+          productId,
+          newPrice
+        );
+
+        const likedUserIds =
+          await productLikeRepository.findUserIdsWhoLikedProductTx(
+            tx,
+            productId
+          );
+
+        return { updatedProduct, likedUserIds };
+      }
+    );
+
+    // 4. 트랜잭션 이후 → 알림 발송 (기존 서비스 그대로 사용)
+    for (const userId of likedUserIds) {
+      await notificationService.pushPriceChange({
+        receiverUserId: userId,
+        productId,
+        oldPrice: product.price,
+        newPrice,
+        productName: product.name,
+      });
+    }
+
+    return updatedProduct;
   }
 
   async updateProduct(

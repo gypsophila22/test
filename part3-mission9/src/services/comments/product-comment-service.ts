@@ -1,6 +1,6 @@
 import { commentService } from './comment-service.js';
 import AppError from '../../lib/appError.js';
-import { productCommentRepository } from '../../repositories/comments/product-cmt-repository.js';
+import { productCommentRepository } from '../../repositories/comments/product-comment-repository.js';
 import { commentLikeRepository } from '../../repositories/like-repository.js';
 import { productRepository } from '../../repositories/product-repository.js';
 import { userRepository } from '../../repositories/user-repository.js';
@@ -14,21 +14,33 @@ class ProductCommentService {
 
   async getCommentsByProductId(productId: number, userId?: number) {
     const comments = await productCommentRepository.findByProductId(productId);
+    if (comments.length === 0) return [];
 
-    return Promise.all(
-      comments.map(async (c) => {
-        const likeCount = await commentLikeRepository.count(c.id);
-        const isLiked = userId
-          ? await commentLikeRepository.exists(userId, c.id)
-          : false;
+    const commentIds = comments.map((c) => c.id);
 
-        return {
-          ...c,
-          likeCount,
-          isLiked,
-        };
-      })
-    );
+    // 1) 댓글별 likeCount 한 번에 가져오기
+    const grouped = await commentLikeRepository.countByTargetIds(commentIds);
+    const likeCountMap = grouped.reduce<Record<number, number>>((acc, row) => {
+      acc[row.commentId] = row._count.commentId;
+      return acc;
+    }, {});
+
+    // 2) 유저가 좋아요 누른 댓글들 한 번에 가져오기
+    let likedSet = new Set<number>();
+    if (userId) {
+      const likedRows = await commentLikeRepository.findByUserAndTargetIds(
+        userId,
+        commentIds
+      );
+      likedSet = new Set(likedRows.map((row) => row.commentId));
+    }
+
+    // 3) 메모리에서 합쳐서 반환
+    return comments.map((c) => ({
+      ...c,
+      likeCount: likeCountMap[c.id] ?? 0,
+      isLiked: userId ? likedSet.has(c.id) : false,
+    }));
   }
 
   async createProductComment(

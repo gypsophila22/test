@@ -1,3 +1,5 @@
+import type { Prisma } from '@prisma/client';
+
 import { prisma } from '../lib/prismaClient.js';
 
 /**
@@ -160,22 +162,32 @@ export class ProductLikeRepository {
   /**
    * 도메인 특화: 이 상품을 좋아요 누른 유저 목록
    */
-  async findUsersWhoLikedProduct(productId: number) {
-    const likes = await prisma.productLike.findMany({
+  // async findUsersWhoLikedProduct(productId: number) {
+  //   const likes = await prisma.productLike.findMany({
+  //     where: { productId },
+  //     select: {
+  //       user: {
+  //         select: {
+  //           id: true,
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   // likes: { user: { id, username, email } }[]
+  //   return likes.map((like) => like.user);
+  // }
+
+  async findUserIdsWhoLikedProductTx(
+    tx: Prisma.TransactionClient,
+    productId: number
+  ) {
+    const likes = await tx.productLike.findMany({
       where: { productId },
-      select: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-          },
-        },
-      },
+      select: { userId: true },
     });
 
-    // likes: { user: { id, username, email } }[]
-    return likes.map((like) => like.user);
+    return likes.map((l) => l.userId);
   }
 }
 

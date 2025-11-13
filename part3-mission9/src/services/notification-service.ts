@@ -1,7 +1,7 @@
 import { ports } from '../lib/ports.js';
 import { notificationRepository } from '../repositories/notification-repository.js';
 
-export const notificationService = {
+class NotificationService {
   async pushPriceChange(args: {
     receiverUserId: number;
     productId: number;
@@ -32,7 +32,7 @@ export const notificationService = {
     });
 
     return notif;
-  },
+  }
 
   async pushArticleComment(args: {
     receiverUserId: number;
@@ -71,7 +71,7 @@ export const notificationService = {
     });
 
     return notif;
-  },
+  }
 
   async pushProductComment(args: {
     receiverUserId: number;
@@ -103,21 +103,23 @@ export const notificationService = {
     });
 
     return notif;
-  },
+  }
 
   async getMyNotifications(userId: number) {
     return notificationRepository.findByUserId(userId);
-  },
+  }
 
   async getMyUnreadCount(userId: number) {
     return notificationRepository.countUnread(userId);
-  },
+  }
 
   async markAsRead(userId: number, notificationId: number) {
-    return notificationRepository.markAsRead(userId, notificationId);
-  },
+    await notificationRepository.markAsRead(userId, notificationId);
+  }
 
   async markAllAsRead(userId: number) {
-    return notificationRepository.markAllAsRead(userId);
-  },
-};
+    await notificationRepository.markAllAsRead(userId);
+  }
+}
+
+export const notificationService = new NotificationService();

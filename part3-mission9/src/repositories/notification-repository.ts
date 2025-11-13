@@ -28,18 +28,23 @@ class NotificationRepository {
   }
 
   async markAsRead(userId: number, notificationId: number) {
-    const r = await prisma.notification.updateMany({
-      where: { id: notificationId, userId },
-      data: { isRead: true },
+    const result = await prisma.notification.updateMany({
+      where: {
+        id: notificationId,
+        userId,
+      },
+      data: {
+        isRead: true,
+      },
     });
-    if (r.count === 0) {
-      throw new AppError('요청이 허용되지 않습니다.', 403);
+
+    if (result.count === 0) {
+      throw new AppError('알림을 찾을 수 없습니다.', 404);
     }
-    return r;
   }
 
-  markAllAsRead(userId: number) {
-    return prisma.notification.updateMany({
+  async markAllAsRead(userId: number) {
+    await prisma.notification.updateMany({
       where: { userId, isRead: false },
       data: { isRead: true },
     });

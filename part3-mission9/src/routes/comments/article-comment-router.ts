@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { articleCommentController } from '../../controllers/comments/article-cmt-controller.js';
+import { articleCommentController } from '../../controllers/comments/article-comment-controller.js';
 import { accessAuth } from '../../lib/passport/index.js';
 import { isCommentOwner } from '../../middlewares/authorize.js';
 import { validation } from '../../middlewares/validation.js';

@@ -1,6 +1,6 @@
 import { prisma } from '../../lib/prismaClient.js';
 
-export const articleCommentRepository = {
+class ArticleCommentRepository {
   findByArticleId(articleId: number) {
     return prisma.comment.findMany({
       where: { articleId },
@@ -13,7 +13,7 @@ export const articleCommentRepository = {
       },
       orderBy: { createdAt: 'desc' },
     });
-  },
+  }
 
   create(articleId: number, content: string, userId: number) {
     return prisma.comment.create({
@@ -23,5 +23,7 @@ export const articleCommentRepository = {
         articleId,
       },
     });
-  },
-};
+  }
+}
+
+export const articleCommentRepository = new ArticleCommentRepository();

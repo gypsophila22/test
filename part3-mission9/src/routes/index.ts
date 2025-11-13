@@ -2,8 +2,8 @@ import express from 'express';
 
 import articleRouter from './article-router.js';
 import authRouter from './auth-router.js';
-import articleCommentRouter from './comments/article-cmt-router.js';
-import productCommentRouter from './comments/product-cmt-router.js';
+import articleCommentRouter from './comments/article-comment-router.js';
+import productCommentRouter from './comments/product-comment-router.js';
 import imageRouter from './image-router.js';
 import notificationRouter from './notification-router.js';
 import productRouter from './product-router.js';

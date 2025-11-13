@@ -19,10 +19,7 @@ export async function buildApp(opts: { forTest?: boolean } = {}) {
 
   app.use(
     cors({
-      origin: [
-        process.env.CORS_ORIGIN || 'http://localhost:3001',
-        'https://codeit-mission3.com',
-      ],
+      origin: [process.env.CORS_ORIGIN || 'http://localhost:3001'],
       credentials: true,
     })
   );

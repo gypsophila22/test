@@ -52,10 +52,7 @@ export function setupWebSocket(server: HTTPServer, deps?: { auth?: AuthFn }) {
   io = new Server(server, {
     path: '/ws',
     cors: {
-      origin: [
-        process.env.CORS_ORIGIN || 'http://localhost:3001',
-        'https://codeit-mission3.com',
-      ],
+      origin: [process.env.CORS_ORIGIN || 'http://localhost:3001'],
       credentials: true,
       methods: ['GET', 'POST'],
     },

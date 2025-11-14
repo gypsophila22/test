@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'part4-mission10',
-      script: 'dist/app.js',
+      script: 'dist/server.js',
       instances: 1,
       exec_mode: 'fork',
       watch: false,

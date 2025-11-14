@@ -1,11 +1,11 @@
 {
-  "name": "part3-mission4",
+  "name": "sprint-mission",
   "version": "1.0.0",
   "description": "",
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "dist/app.js",
+  "main": "dist/server.js",
   "scripts": {
     "seed": "tsx src/prisma/seed.ts",
     "postinstall": "npx prisma generate && npx prisma migrate deploy && npx prisma db seed",

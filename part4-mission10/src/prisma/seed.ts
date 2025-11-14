@@ -1,15 +1,23 @@
-// import 'dotenv/config';
 import bcrypt from 'bcrypt';
-
 import { prisma } from '../lib/prismaClient.js';
 
 const main = async () => {
-  // 1️ 유저 시드
+  console.log('🔄 시드 시작...');
 
+  // 0️⃣ 모든 댓글/게시글/상품은 매번 삭제 후 재생성
+  await prisma.comment.deleteMany();
+  await prisma.article.deleteMany();
+  await prisma.product.deleteMany();
+  console.log('🧹 product / article / comment 초기화 완료');
+
+  // 1️⃣ 유저는 username unique 있으므로 upsert 가능 → 안전
   const hashedPassword1 = await bcrypt.hash('password1', 10);
   const hashedPassword2 = await bcrypt.hash('password2', 10);
-  const user1 = await prisma.user.create({
-    data: {
+
+  const user1 = await prisma.user.upsert({
+    where: { username: 'testUser1' },
+    update: {},
+    create: {
       username: 'testUser1',
       email: 'test1@example.com',
       password: hashedPassword1,
@@ -17,8 +25,10 @@ const main = async () => {
     },
   });
 
-  const user2 = await prisma.user.create({
-    data: {
+  const user2 = await prisma.user.upsert({
+    where: { username: 'testUser2' },
+    update: {},
+    create: {
       username: 'testUser2',
       email: 'test2@example.com',
       password: hashedPassword2,
@@ -26,7 +36,9 @@ const main = async () => {
     },
   });
 
-  // 2️ 상품 시드 (총 3개)
+  console.log('👤 유저 upsert 완료');
+
+  // 2️⃣ 상품 재생성 (deleteMany 했으므로 create는 항상 성공)
   const product1 = await prisma.product.create({
     data: {
       name: 'Nintendo Switch2',
@@ -34,7 +46,7 @@ const main = async () => {
       price: 650000,
       tags: ['전자제품'],
       images: [],
-      user: { connect: { id: user1.id } },
+      userId: user1.id,
     },
   });
 
@@ -45,7 +57,7 @@ const main = async () => {
       price: 750000,
       tags: ['게임기'],
       images: [],
-      user: { connect: { id: user2.id } },
+      userId: user2.id,
     },
   });
 
@@ -56,17 +68,19 @@ const main = async () => {
       price: 700000,
       tags: ['게임기'],
       images: [],
-      user: { connect: { id: user1.id } },
+      userId: user1.id,
     },
   });
 
-  // 3️ 게시글 시드 (총 3개)
+  console.log('🛒 상품 생성 완료');
+
+  // 3️⃣ 게시글 재생성
   const article1 = await prisma.article.create({
     data: {
       title: '스위치2 솔직히 너무 비싼듯 ㅇㅇ',
       content: 'ㅈㄱㄴ',
       tags: ['리뷰'],
-      user: { connect: { id: user2.id } },
+      userId: user2.id,
     },
   });
 
@@ -75,7 +89,7 @@ const main = async () => {
       title: '플스5 성능 리뷰',
       content: '가격만 빼면 마음에 드네',
       tags: ['리뷰', '게임'],
-      user: { connect: { id: user1.id } },
+      userId: user1.id,
     },
   });
 
@@ -84,11 +98,13 @@ const main = async () => {
       title: '엑스박스 시리즈 X 후기',
       content: '엑스박스 쳤다...',
       tags: ['리뷰', '게임'],
-      user: { connect: { id: user2.id } },
+      userId: user2.id,
     },
   });
 
-  // 4️ 댓글 시드
+  console.log('📝 게시글 생성 완료');
+
+  // 4️⃣ 댓글 재생성
   await prisma.comment.createMany({
     data: [
       // Product1 댓글
@@ -99,17 +115,17 @@ const main = async () => {
         productId: product1.id,
       },
 
-      // Product2 댓글
+      // Product2
       {
         content: '플스5 진짜 사고 싶다',
         userId: user1.id,
         productId: product2.id,
       },
 
-      // Product3 댓글
+      // Product3
       { content: '엑박도 좋음', userId: user2.id, productId: product3.id },
 
-      // Article1 댓글
+      // Article1
       {
         content: 'ㄹㅇ 쉽지않음 거의 플스5급 아님?',
         userId: user1.id,
@@ -121,26 +137,28 @@ const main = async () => {
         articleId: article1.id,
       },
 
-      // Article2 댓글
+      // Article2
       {
         content: '성능 리뷰 잘 봤습니다',
         userId: user2.id,
         articleId: article2.id,
       },
 
-      // Article3 댓글
+      // Article3
       { content: '엑박 후기 ㄳ', userId: user1.id, articleId: article3.id },
     ],
   });
+
+  console.log('💬 댓글 생성 완료');
 };
 
 main()
   .then(() => {
-    console.log('데이터베이스 시딩 완료.');
+    console.log('🎉 데이터베이스 시딩 완료.');
     return prisma.$disconnect();
   })
   .catch(async (e) => {
-    console.error(e);
+    console.error('❌ 시딩 에러:', e);
     await prisma.$disconnect();
     process.exit(1);
   });

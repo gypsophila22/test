@@ -1,21 +1,22 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import express from 'express';
-import http from 'http';
+import path from 'path';
 
+import { dirnameFromMeta } from './lib/dirname.js';
 import passport from './lib/passport/index.js';
-import { setupWebSocket } from './lib/ws.js';
 import errorHandler from './middlewares/errorHandler.js';
 import { requestLogger } from './middlewares/logger.js';
 import routes from './routes/index.js';
 import { setupSwagger } from './swagger.js';
 
-export async function buildApp(opts: { forTest?: boolean } = {}) {
-  dotenv.config(process.env.NODE_ENV === 'test' ? { quiet: true } : undefined);
-  const forTest = !!opts.forTest;
-
+export async function buildApp(_opts: { forTest?: boolean } = {}) {
   const app = express();
+  const __dirname_safe = dirnameFromMeta(import.meta.url);
+  const isProd = process.env.NODE_ENV === 'production';
+
+  // nginx
+  app.set('trust proxy', 1);
 
   app.use(
     cors({
@@ -26,7 +27,11 @@ export async function buildApp(opts: { forTest?: boolean } = {}) {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use('/uploads', express.static('uploads'));
+
+  // dev/test 에서만 src/uploads 정적 서빙
+  if (!isProd) {
+    app.use('/uploads', express.static(path.join(__dirname_safe, './uploads')));
+  }
 
   app.use(cookieParser());
   app.use(passport.initialize());
@@ -37,22 +42,5 @@ export async function buildApp(opts: { forTest?: boolean } = {}) {
 
   app.use(errorHandler);
 
-  if (!forTest) {
-    const server = http.createServer(app);
-    setupWebSocket(server);
-    const PORT = Number(process.env.PORT) || 3000;
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
-    });
-  }
-
   return app;
-}
-
-// 실제 실행 진입점 (개발/운영)
-if (process.env.NODE_ENV !== 'test') {
-  buildApp({ forTest: false }).catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
 }

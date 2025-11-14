@@ -24,7 +24,7 @@ test('mapDomainToWire: default fallback', () => {
 });
 
 test('publishToUser uses provided io', () => {
-  const io = new Server(); // 실제 인스턴스 (네트워크 안 씀)
+  const io = new Server();
   const emitted: Array<{ event: string; payload: unknown }> = [];
 
   type ToReturn = ReturnType<Server['to']>;

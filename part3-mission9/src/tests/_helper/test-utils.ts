@@ -32,7 +32,7 @@ export async function loginAndGetSession(
     const { prismaReset, seedUsersWithHash } = await import('./prisma-mock.js');
     if (resetBeforeSeed) prismaReset();
     await seedUsersWithHash([
-      { id: userId, username, email: 'u@ex.com', password }, // password는 평문으로 넘기면 함수가 bcrypt 해시
+      { id: userId, username, email: 'u@ex.com', password },
     ]);
   }
 

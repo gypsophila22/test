@@ -8,7 +8,7 @@ import {
   wsGateway,
   closeWebSocket,
   __resetWsForTest,
-  __getUserSocketsForTest, // ← 내부 소켓맵 확인용
+  __getUserSocketsForTest,
 } from '../../lib/ws.js';
 
 /** ---- 타입 (any 금지) ---- */
@@ -62,7 +62,7 @@ async function waitForServerSockets(
   const start = Date.now();
   // 폴링 주기 50ms
   while (Date.now() - start < timeoutMs) {
-    const map = __getUserSocketsForTest(); // Map<number, Set<string>>
+    const map = __getUserSocketsForTest();
     const set = map.get(userId);
     if (set && set.size === expectedCount) return;
     await new Promise((r) => setTimeout(r, 50));
@@ -82,23 +82,20 @@ afterEach(async () => {
 /** ---- 본 테스트 ---- */
 test('setupWebSocket + wsGateway.notifyUser → client receives', async () => {
   const httpServer = createServer();
-  // 종료 빨리
   httpServer.keepAliveTimeout = 0;
   httpServer.headersTimeout = 0;
 
-  // 1) HTTP 먼저 listen
   await new Promise<void>((r) => httpServer.listen(0, '127.0.0.1', r));
   const { port } = httpServer.address() as AddressInfo;
   const base = `http://127.0.0.1:${port}`;
 
-  // 2) WS 붙이되, 인증은 DI로 고정 (항상 userId=99)
   setupWebSocket(httpServer, { auth: () => 99 });
-  await new Promise((r) => setImmediate(r)); // 다음 tick
+  await new Promise((r) => setImmediate(r));
 
   const opts = {
     path: '/ws',
-    auth: { token: 'T' }, // truthy 면 무엇이든
-    transports: ['websocket'], // 폴링 금지
+    auth: { token: 'T' },
+    transports: ['websocket'],
     reconnection: false,
     forceNew: true,
     timeout: 4000,
@@ -108,19 +105,14 @@ test('setupWebSocket + wsGateway.notifyUser → client receives', async () => {
   const c2 = Client(base, opts) as unknown as Socket<S2C, C2S>;
 
   try {
-    // 3) 네트워크 연결 완료
     await Promise.all([waitConnect(c1), waitConnect(c2)]);
-
-    // 4) 서버 내부 상태 기준으로 “연결 2개 등록됨”을 확정
     await waitForServerSockets(99, 2, 5000);
 
-    // 5) 알림 전송 및 수신 검증 (joined 이벤트를 기다리지 않음)
     const p = onceNotification(c2);
     wsGateway.notifyUser({ userId: 99, type: P.NEW_COMMENT, message: 'hi' });
     const got = await p;
     expect(got).toMatchObject({ message: 'hi' });
   } finally {
-    // 항상: 클라 → WS → HTTP 순서로 종료
     c1.removeAllListeners();
     c2.removeAllListeners();
     c1.disconnect();

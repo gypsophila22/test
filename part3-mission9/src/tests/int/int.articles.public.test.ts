@@ -25,7 +25,6 @@ describe('[통합] 게시글 API (비인증)', () => {
       { articleId: 21, userId: 1 },
       { articleId: 21, userId: 2 },
     ]);
-    // 서비스가 댓글·댓글좋아요도 집계한다면 필요
     seedCommentLikes([{ commentId: 100, userId: 1 }]);
   });
 

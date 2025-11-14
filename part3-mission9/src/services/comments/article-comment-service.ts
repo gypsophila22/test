@@ -65,7 +65,7 @@ class ArticleCommentService {
       const commenter = await userRepository.findUsernameById(userId);
 
       await notificationService.pushArticleComment({
-        receiverUserId: article.userId, // 글 작성자
+        receiverUserId: article.userId,
         articleId: article.id,
         commentId: comment.id,
         articleTitle: article.title,

@@ -164,7 +164,7 @@ class ProductService {
   async updateProductPrice(
     productId: number,
     newPrice: number,
-    _actorUserId: number // 안 쓰면 _ 붙이기
+    _actorUserId: number
   ) {
     // 1. 기존 상품
     const product = await productRepository.findUnique(productId);

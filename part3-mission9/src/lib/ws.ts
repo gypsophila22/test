@@ -12,7 +12,6 @@ let io: Server | undefined;
 
 type AuthFn = (rawToken: unknown) => number | null;
 
-// ── 테스트용 훅
 export function __resetWsForTest() {
   userSockets.clear();
   io = undefined;
@@ -21,7 +20,6 @@ export function __getUserSocketsForTest() {
   return userSockets;
 }
 
-// 클라이언트 페이로드 타입
 type WireNotificationType = 'contract-linked' | 'chat' | 'system';
 export interface WireNotificationPayload {
   type: WireNotificationType;
@@ -30,7 +28,6 @@ export interface WireNotificationPayload {
   data?: Record<string, unknown>;
 }
 
-// 도메인/프리즈마 둘 다 허용 (브랜치 커버 노림)
 export function mapDomainToWire(
   t: PrismaNotificationType | DomainNotificationType
 ): WireNotificationType {
@@ -129,7 +126,7 @@ export function publishToUser(
 export async function closeWebSocket(): Promise<void> {
   if (!io) return;
 
-  // 1) 모든 소켓 강제 disconnect (ping 타이머 등 끊기)
+  // 1) 모든 소켓 강제 disconnect
   const sockets = await io.fetchSockets().catch(() => []);
   for (const s of sockets) {
     try {

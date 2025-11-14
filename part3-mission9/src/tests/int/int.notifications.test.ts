@@ -81,7 +81,7 @@ describe('Notifications API (secure)', () => {
       .set('Authorization', `Bearer ${tokenUser1}`);
 
     const target = list.body.items?.[0];
-    if (!target) return; // 알림이 없으면 스킵(또는 사전 생성 루틴 추가)
+    if (!target) return;
 
     const res = await agent
       .patch(`/notifications/${target.id}/read`)

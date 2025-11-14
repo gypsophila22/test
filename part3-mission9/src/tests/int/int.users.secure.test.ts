@@ -89,7 +89,7 @@ describe('[통합] 유저 API (인증 필요)', () => {
       .patch('/users/7/password')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
-        currentPassword: 'pw', // 시드와 일치해야 함
+        currentPassword: 'pw',
         newPassword: 'NewPass123!',
         newPasswordConfirm: 'NewPass123!',
       })
@@ -172,7 +172,7 @@ describe('[통합] 유저 API (인증 필요)', () => {
 
     seedArticles([{ id: 20, title: 'A20', userId: 88 }]);
     seedComments([{ id: 30, userId: 55, content: 'nice', articleId: 20 }]);
-    seedCommentLikes([{ commentId: 30, userId: 7 }]); // 7이 좋아요
+    seedCommentLikes([{ commentId: 30, userId: 7 }]);
 
     const res = await request(app)
       .get('/users/7/likes/comments')
@@ -185,7 +185,6 @@ describe('[통합] 유저 API (인증 필요)', () => {
         expect.objectContaining({
           id: 30,
           content: 'nice',
-          // 구현에 따라 article/product/isLiked 등을 더 검증해도 OK
         }),
       ])
     );

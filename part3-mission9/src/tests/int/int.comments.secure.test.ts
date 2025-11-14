@@ -96,7 +96,7 @@ describe('[통합] 게시글 댓글 API (인증 필요)', () => {
     const cId = c.id;
 
     await request(app)
-      .patch(`/articles/comments/${cId}`) // ← 경로 불일치 의심: 라우터 정의와 맞춰보세요
+      .patch(`/articles/comments/${cId}`)
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ content: 'new' })
       .expect(200);
@@ -121,11 +121,10 @@ describe('[통합] 게시글 댓글 API (인증 필요)', () => {
     const cId = c.id;
 
     const likeRes = await request(app)
-      .post(`/articles/comments/${cId}/like`) // ← 경로 재확인
+      .post(`/articles/comments/${cId}/like`)
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    // 좋아요 응답 형태가 프로젝트마다 다르니 느슨 검증 유지
     const likeBody =
       asBody<ApiData<{ message: string; likeCount: number }>>(likeRes);
     expect(likeBody.data.message).toEqual(expect.stringMatching(/완료|liked/i));
@@ -215,7 +214,7 @@ describe('[통합] 상품 댓글 API (인증 필요)', () => {
     const cId = c.id;
 
     await request(app)
-      .patch(`/products/comments/${cId}`) // ← 경로 불일치 의심: 라우터 정의와 맞춰보세요
+      .patch(`/products/comments/${cId}`)
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ content: 'new' })
       .expect(200);

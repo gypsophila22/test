@@ -21,7 +21,7 @@ class ProductRepository {
           },
         },
         ...(userId && {
-          likes: { where: { userId }, select: { userId: true } }, // ✅ 유저가 좋아요 했는지 확인
+          likes: { where: { userId }, select: { userId: true } },
         }),
       },
     });

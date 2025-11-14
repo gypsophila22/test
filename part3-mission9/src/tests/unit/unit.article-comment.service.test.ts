@@ -193,7 +193,7 @@ describe('ArticleCommentService', () => {
   test('markAsRead: 정상', async () => {
     const upd = jest
       .spyOn(prisma.notification, 'updateMany')
-      .mockResolvedValue({ count: 1 }); // Prisma.PrismaPromise<BatchPayload> 흉내
+      .mockResolvedValue({ count: 1 });
 
     await expect(
       notificationService.markAsRead(99, 7)

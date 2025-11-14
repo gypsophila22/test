@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const ACCESS_SECRET_RAW = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_SECRET_RAW = process.env.REFRESH_TOKEN_SECRET;
 
-// 존재하지 않으면 서버 바로 중단 (런타임 가드)
+// 존재하지 않으면 서버 바로 중단
 if (!ACCESS_SECRET_RAW || !REFRESH_SECRET_RAW) {
   throw new Error('JWT secrets are not set in environment variables');
 }

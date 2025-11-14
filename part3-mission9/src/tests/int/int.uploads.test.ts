@@ -5,7 +5,7 @@ import request from 'supertest';
 describe('[통합] 이미지 업로드', () => {
   let app: import('express').Express;
   const projectRoot = path.resolve(process.cwd());
-  const savedDir = path.join(projectRoot, 'src', 'uploads', 'saved');
+  const savedDir = path.join(projectRoot, 'src', 'uploads');
 
   beforeAll(async () => {
     const { createTestApp } = await import('../_helper/test-app.js');
@@ -38,7 +38,7 @@ describe('[통합] 이미지 업로드', () => {
       expect.objectContaining({
         message: expect.any(String),
         filename: expect.stringMatching(/myImage-\d+\.jpg$/),
-        filepath: expect.stringMatching(/^\/uploads\/myImage-\d+\.jpg$/),
+        url: expect.stringMatching(/^\/uploads\/myImage-\d+\.jpg$/),
       })
     );
 
@@ -68,10 +68,10 @@ describe('[통합] 이미지 업로드', () => {
     expect(res.body.files).toHaveLength(3);
     for (const f of res.body.files as Array<{
       filename: string;
-      filepath: string;
+      url: string;
     }>) {
       expect(f.filename).toMatch(/^myImages-\d+\.png$/);
-      expect(fs.existsSync(path.join(savedDir, f.filename))).toBe(true);
+      expect(f.url).toMatch(/^\/uploads\/myImages-\d+\.png$/);
     }
   });
 

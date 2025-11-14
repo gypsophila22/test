@@ -23,6 +23,7 @@
     "src",
     "prisma/**/*",
     "src/generated/prisma/**/*",
-    "jest.unit.config.cjs"
+    "jest.unit.config.cjs",
+    "src/types/**/*.d.ts"
   ]
 }

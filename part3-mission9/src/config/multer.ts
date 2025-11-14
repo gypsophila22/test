@@ -1,26 +1,15 @@
+import { S3Client } from '@aws-sdk/client-s3';
 import multer, { type FileFilterCallback } from 'multer';
+import multerS3 from 'multer-s3';
 import path from 'path';
-// import { fileURLToPath } from 'url';
 
 import { dirnameFromMeta } from '../lib/dirname.js';
 
-// ES 모듈에서 __dirname을 사용하기 위한 설정
-// const __filename = fileURLToPath(import.meta.url);
 const __dirname_safe = dirnameFromMeta(import.meta.url);
 
-// 파일 저장 경로 및 파일명 설정
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname_safe, '../uploads/saved'));
-  },
-  filename: (req, file, cb) => {
-    // 파일명: 필드이름-현재시간.확장자
-    const ext = path.extname(file.originalname); // 원본 파일의 확장자 추출
-    cb(null, `${file.fieldname}-${Date.now()}${ext}`);
-  },
-});
+const isProd = process.env.NODE_ENV === 'production';
 
-// 파일 필터 설정 (이미지 파일만 허용)
+/* ------------ 공통 파일 필터 (이미지 전용) ------------ */
 const fileFilter = (
   req: Express.Request,
   file: Express.Multer.File,
@@ -37,13 +26,52 @@ const fileFilter = (
   }
 };
 
-// Multer 미들웨어 설정
+/* ------------ 스토리지 엔진 결정 (dev: 로컬, prod: S3) ------------ */
+let storage: multer.StorageEngine;
+
+if (isProd) {
+  //  프로덕션: S3로 업로드
+  const s3 = new S3Client({
+    region: process.env.AWS_REGION!,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    },
+  });
+
+  storage = multerS3({
+    s3,
+    bucket: process.env.AWS_S3_BUCKET!,
+    acl: 'public-read',
+    metadata: (req, file, cb) => {
+      cb(null, { fieldName: file.fieldname });
+    },
+    key: (req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      const filename = `${file.fieldname}-${Date.now()}${ext}`;
+      cb(null, filename);
+    },
+  });
+} else {
+  //  개발/테스트: 로컬 디스크 저장
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, path.join(__dirname_safe, '../uploads'));
+    },
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      cb(null, `${file.fieldname}-${Date.now()}${ext}`);
+    },
+  });
+}
+
+/* ------------ Multer 미들웨어 ------------ */
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB로 파일 크기 제한
-    files: 5, // 최대 5개 파일까지 허용 (upload.array에 사용)
+    fileSize: 5 * 1024 * 1024, // 5MB
+    files: 5,
   },
 });
 

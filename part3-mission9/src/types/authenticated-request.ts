@@ -7,5 +7,5 @@ export interface AuthUser {
 }
 
 export interface AuthenticatedRequest extends Request {
-  user: AuthUser; // 여기엔 ? 없음! 무조건 존재한다고 가정
+  user: AuthUser;
 }

@@ -1,7 +1,7 @@
 import express, { type ErrorRequestHandler } from 'express';
 import passport from 'passport';
 
-import { localStrategy } from '../../lib/passport/localStrategy.js'; // 기존 코드 그대로
+import { localStrategy } from '../../lib/passport/localStrategy.js';
 
 type MaybeHttpError = {
   status?: unknown;

@@ -11,7 +11,6 @@ const options: swaggerJSDoc.Options = {
       description: 'Express + TypeScript API 문서',
     },
   },
-  // Swagger 주석을 읽을 경로 (ts 파일 포함 가능)
   apis: ['./src/routes/*.ts', './src/controllers/*.ts'],
 };
 

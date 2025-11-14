@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import { prisma } from '../lib/prismaClient.js';
 
 const main = async () => {
-  // 1️⃣ 유저 시드
+  // 1️ 유저 시드
 
   const hashedPassword1 = await bcrypt.hash('password1', 10);
   const hashedPassword2 = await bcrypt.hash('password2', 10);
@@ -26,7 +26,7 @@ const main = async () => {
     },
   });
 
-  // 2️⃣ 상품 시드 (총 3개)
+  // 2️ 상품 시드 (총 3개)
   const product1 = await prisma.product.create({
     data: {
       name: 'Nintendo Switch2',
@@ -60,7 +60,7 @@ const main = async () => {
     },
   });
 
-  // 3️⃣ 게시글 시드 (총 3개)
+  // 3️ 게시글 시드 (총 3개)
   const article1 = await prisma.article.create({
     data: {
       title: '스위치2 솔직히 너무 비싼듯 ㅇㅇ',
@@ -88,7 +88,7 @@ const main = async () => {
     },
   });
 
-  // 4️⃣ 댓글 시드
+  // 4️ 댓글 시드
   await prisma.comment.createMany({
     data: [
       // Product1 댓글

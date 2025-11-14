@@ -133,7 +133,7 @@ class Validation {
     next();
   }
 
-  // ✅ 목록 쿼리 스키마 (필요에 맞게 필드 추가/수정 OK)
+  //  목록 쿼리 스키마 (필요에 맞게 필드 추가/수정 OK)
   listQuerySchema = z
     .object({
       page: z.coerce.number().int().min(1).default(1),
@@ -181,7 +181,7 @@ class Validation {
     };
   }
 
-  // ✅ 쿼리 검증 미들웨어 추가
+  //  쿼리 검증 미들웨어 추가
   validateQuery(schema: z.ZodTypeAny) {
     return (req: Request, res: Response, next: NextFunction) => {
       const result = schema.safeParse(req.query);

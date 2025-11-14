@@ -1,14 +1,13 @@
-// eslint.config.cjs
 const importPlugin = require('eslint-plugin-import');
 const jestPlugin = require('eslint-plugin-jest');
 const globals = require('globals');
 const tseslint = require('typescript-eslint');
 
 module.exports = [
-  // 예외(무시) 경로는 여기서!
+  // 예외(무시) 경로
   { ignores: ['node_modules/**', 'dist/**', 'coverage/**', 'generated/**'] },
 
-  // 기본 규칙 세트 (TS/JS 공통)
+  // 기본 규칙 세트
   {
     files: ['**/*.{ts,tsx,js,cjs}'],
     languageOptions: {
@@ -17,9 +16,6 @@ module.exports = [
       sourceType: 'module',
       globals: { ...globals.node, ...globals.es2022 },
       parserOptions: {
-        // 타입체크 규칙이 필요하면 projectService/tsconfig 지정
-        // projectService: true,
-        // tsconfigRootDir: __dirname,
         project: false,
       },
     },
@@ -72,7 +68,7 @@ module.exports = [
       globals: { ...globals.node, ...globals.jest },
     },
     rules: {
-      'no-console': 'off', // 테스트 로그 허용(원하면 켜두세요)
+      'no-console': 'off', // 테스트 로그 허용
     },
   },
 

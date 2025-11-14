@@ -19,6 +19,7 @@
     "esModuleInterop": true,
     "moduleResolution": "nodenext"
   },
+  "exclude": ["src/tests"],
   "include": [
     "src",
     "prisma/**/*",

@@ -1,6 +1,6 @@
 //#region Imports
 import { jest } from '@jest/globals';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 //#endregion
 
 //#region Records (Types)

@@ -13,6 +13,7 @@ generated/
 
 # Env
 .env
+.env.production
 
 # OS
 .DS_Store

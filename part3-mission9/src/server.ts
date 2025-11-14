@@ -1,10 +1,8 @@
-import dotenv from 'dotenv';
+import './env.js';
 import http from 'http';
 
 import { buildApp } from './app.js';
 import { setupWebSocket } from './lib/ws.js';
-
-dotenv.config();
 
 async function startServer() {
   try {

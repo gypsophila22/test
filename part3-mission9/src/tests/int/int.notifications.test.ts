@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import request from 'supertest';
 
 import { prisma } from '../../lib/prismaClient.js';

@@ -21,7 +21,7 @@ generated/
 # Build output
 dist/
 
-# Test coverage outputs
+# Test coverage outputs!
 coverage/
 *.lcov
 lcov.info

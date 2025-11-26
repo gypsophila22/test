@@ -38,6 +38,6 @@ jobs:
           script: |
             cd /home/ec2-user/app
             git pull origin main
-            npm ci
+            npm ci --only=production --no-audit --no-fund
             npm run build
             pm2 restart mission11 || pm2 start dist/server.js --name mission11
